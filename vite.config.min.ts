@@ -1,28 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import dts from 'vite-plugin-dts';
 
 export default defineConfig({
-  plugins: [
-    dts({
-      include: ['src/**/*.ts', 'src/**/*.d.ts'],
-      outDir: 'dist',
-      copyDtsFiles: true,
-    }),
-  ],
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'ambisonics',
       fileName: (format) => {
-        if (format === 'umd') return 'ambisonics.umd.js';
-        if (format === 'es') return 'ambisonics.es.js';
-        return `ambisonics.${format}.js`;
+        if (format === 'umd') return 'ambisonics.umd.min.js';
+        if (format === 'es') return 'ambisonics.es.min.js';
+        return `ambisonics.${format}.min.js`;
       },
     },
     outDir: 'dist',
     sourcemap: true,
-    minify: false,
+    minify: 'esbuild',
+    emptyOutDir: false,
     rollupOptions: {
       external: [],
       output: {
