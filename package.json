@@ -12,8 +12,10 @@
   "type": "module",
   "main": "./dist/ambisonics.umd.js",
   "module": "./dist/ambisonics.es.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/ambisonics.es.js",
       "require": "./dist/ambisonics.umd.js"
     }
@@ -21,7 +23,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "license": "BSD-3-Clause",
   "repository": {
@@ -42,7 +45,10 @@
     "spherical-harmonic-transform": "^0.1.0"
   },
   "devDependencies": {
-    "vite": "^5.4.0"
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.0",
+    "vite-plugin-dts": "^4.5.4"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.53.3"
