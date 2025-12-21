@@ -87,6 +87,9 @@ export default class monoEncoder2D implements InitializableProcessor, Orientable
    * Only the horizontal plane (x, y) components are used; z is ignored.
    * The vector does not need to be normalized.
    *
+   * Note: A zero-length vector (0, 0, 0) or a purely vertical vector (0, 0, z)
+   * results in azimuth 0° (front direction).
+   *
    * @param x - X component of direction vector
    * @param y - Y component of direction vector
    * @param z - Z component (ignored for 2D encoding)

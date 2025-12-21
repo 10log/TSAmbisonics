@@ -86,6 +86,9 @@ export default class monoEncoder implements InitializableProcessor, OrientablePr
    * Set the encoding direction from a Cartesian direction vector.
    * The vector does not need to be normalized.
    *
+   * Note: A zero-length vector (0, 0, 0) results in undefined behavior
+   * from the underlying spherical harmonic library.
+   *
    * @param x - X component of direction vector
    * @param y - Y component of direction vector
    * @param z - Z component of direction vector
