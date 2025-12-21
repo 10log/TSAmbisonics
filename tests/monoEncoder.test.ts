@@ -181,6 +181,25 @@ describe('monoEncoder', () => {
       encoder.setDirection(0, 1, 0, 'threejs'); // +Y = up in Three.js
       expect(encoder.elev).toBeCloseTo(90, 5);
     });
+
+    it('sets direction from Cartesian vector (down)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 0, -1); // -Z = down in ambisonics
+      expect(encoder.elev).toBeCloseTo(-90, 5);
+    });
+
+    it('sets direction from Cartesian vector (back)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(-1, 0, 0); // -X = back in ambisonics
+      expect(Math.abs(encoder.azim)).toBeCloseTo(180, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('handles zero vector gracefully', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      // Zero vector is degenerate - just verify it doesn't throw
+      expect(() => encoder.setDirection(0, 0, 0)).not.toThrow();
+    });
   });
 
   describe('getDirection', () => {
