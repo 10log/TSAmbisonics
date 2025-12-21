@@ -10,6 +10,7 @@ export type {
   VmicPattern,
   MirrorPlane,
   LoaderCallback,
+  CoordinateSystem,
 } from './types';
 
 export {
@@ -18,6 +19,17 @@ export {
   degreesToRadians,
   radiansToDegrees,
 } from './types';
+
+// Buffer-based encoding (offline processing)
+export {
+  encodeBuffer,
+  encodeBuffer2D,
+  encodeBufferFromDirection,
+  encodeBuffer2DFromDirection,
+  encodeAndSumBuffers,
+  computeEncodingCoefficients,
+  computeEncodingCoefficients2D,
+} from './ambi-encodeBuffer';
 
 // Encoders
 export { default as monoEncoder } from './ambi-monoEncoder';
