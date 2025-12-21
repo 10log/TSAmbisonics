@@ -246,14 +246,14 @@ describe('monoEncoder', () => {
 
     it('roundtrips through setDirection and getDirection', () => {
       const encoder = new monoEncoder(audioCtx, 1);
-      const original = [0.5, 0.5, Math.sqrt(0.5)] as [number, number, number];
+      // Use a normalized vector: [1/sqrt(3), 1/sqrt(3), 1/sqrt(3)]
+      const s = 1 / Math.sqrt(3);
+      const original = [s, s, s] as [number, number, number];
       encoder.setDirection(...original);
       const result = encoder.getDirection();
-      // Normalize original for comparison
-      const len = Math.sqrt(original[0]**2 + original[1]**2 + original[2]**2);
-      expect(result[0]).toBeCloseTo(original[0] / len, 5);
-      expect(result[1]).toBeCloseTo(original[1] / len, 5);
-      expect(result[2]).toBeCloseTo(original[2] / len, 5);
+      expect(result[0]).toBeCloseTo(original[0], 5);
+      expect(result[1]).toBeCloseTo(original[1], 5);
+      expect(result[2]).toBeCloseTo(original[2], 5);
     });
   });
 });
