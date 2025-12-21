@@ -126,4 +126,165 @@ describe('monoEncoder', () => {
       expect(encoder.nCh).toBe(25);
     });
   });
+
+  describe('setDirection', () => {
+    it('sets direction from Cartesian vector (front)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(1, 0, 0); // +X = front in ambisonics
+      expect(encoder.azim).toBeCloseTo(0, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('sets direction from Cartesian vector (left)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 1, 0); // +Y = left in ambisonics
+      expect(encoder.azim).toBeCloseTo(90, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('sets direction from Cartesian vector (up)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 0, 1); // +Z = up in ambisonics
+      expect(encoder.elev).toBeCloseTo(90, 5);
+    });
+
+    it('sets direction from Cartesian vector (right)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, -1, 0); // -Y = right in ambisonics
+      expect(encoder.azim).toBeCloseTo(-90, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('handles non-normalized vectors', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(10, 0, 0); // Non-unit vector
+      expect(encoder.azim).toBeCloseTo(0, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('converts Three.js coordinates (forward)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 0, 1, 'threejs'); // +Z = forward in Three.js
+      expect(encoder.azim).toBeCloseTo(0, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('converts Three.js coordinates (right)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(1, 0, 0, 'threejs'); // +X = right in Three.js
+      expect(encoder.azim).toBeCloseTo(-90, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('converts Three.js coordinates (up)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 1, 0, 'threejs'); // +Y = up in Three.js
+      expect(encoder.elev).toBeCloseTo(90, 5);
+    });
+
+    it('sets direction from Cartesian vector (down)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(0, 0, -1); // -Z = down in ambisonics
+      expect(encoder.elev).toBeCloseTo(-90, 5);
+    });
+
+    it('sets direction from Cartesian vector (back)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.setDirection(-1, 0, 0); // -X = back in ambisonics
+      expect(Math.abs(encoder.azim)).toBeCloseTo(180, 5);
+      expect(encoder.elev).toBeCloseTo(0, 5);
+    });
+
+    it('handles zero vector gracefully', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      // Zero vector is degenerate - just verify it doesn't throw
+      expect(() => encoder.setDirection(0, 0, 0)).not.toThrow();
+    });
+  });
+
+  describe('getDirection', () => {
+    it('returns unit vector for front direction', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 0;
+      encoder.elev = 0;
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(1, 5);
+      expect(y).toBeCloseTo(0, 5);
+      expect(z).toBeCloseTo(0, 5);
+    });
+
+    it('returns unit vector for left direction', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 90;
+      encoder.elev = 0;
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBeCloseTo(1, 5);
+      expect(z).toBeCloseTo(0, 5);
+    });
+
+    it('returns unit vector for up direction', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 0;
+      encoder.elev = 90;
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBeCloseTo(0, 5);
+      expect(z).toBeCloseTo(1, 5);
+    });
+
+    it('converts to Three.js coordinates (front)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 0;
+      encoder.elev = 0;
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBeCloseTo(0, 5);
+      expect(z).toBeCloseTo(1, 5); // Front in Three.js = +Z
+    });
+
+    it('converts to Three.js coordinates (left)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 90;
+      encoder.elev = 0;
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(-1, 5); // Left in Three.js = -X
+      expect(y).toBeCloseTo(0, 5);
+      expect(z).toBeCloseTo(0, 5);
+    });
+
+    it('converts to Three.js coordinates (up)', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      encoder.azim = 0;
+      encoder.elev = 90;
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBeCloseTo(1, 5); // Up in Three.js = +Y
+      expect(z).toBeCloseTo(0, 5);
+    });
+
+    it('roundtrips through setDirection and getDirection', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      // Use a normalized vector: [1/sqrt(3), 1/sqrt(3), 1/sqrt(3)]
+      const s = 1 / Math.sqrt(3);
+      const original = [s, s, s] as [number, number, number];
+      encoder.setDirection(...original);
+      const result = encoder.getDirection();
+      expect(result[0]).toBeCloseTo(original[0], 5);
+      expect(result[1]).toBeCloseTo(original[1], 5);
+      expect(result[2]).toBeCloseTo(original[2], 5);
+    });
+
+    it('roundtrips through setDirection and getDirection with threejs coords', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      // Use a normalized vector in Three.js space
+      const s = 1 / Math.sqrt(3);
+      const original = [s, s, s] as [number, number, number];
+      encoder.setDirection(...original, 'threejs');
+      const result = encoder.getDirection('threejs');
+      expect(result[0]).toBeCloseTo(original[0], 5);
+      expect(result[1]).toBeCloseTo(original[1], 5);
+      expect(result[2]).toBeCloseTo(original[2], 5);
+    });
+  });
 });

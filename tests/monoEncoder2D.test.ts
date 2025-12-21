@@ -114,4 +114,120 @@ describe('monoEncoder2D', () => {
       expect(encoder.nCh).toBe(9);
     });
   });
+
+  describe('setDirection', () => {
+    it('sets direction from Cartesian vector (front)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(1, 0, 0); // +X = front in ambisonics
+      expect(encoder.azim).toBeCloseTo(0, 5);
+      expect(encoder.elev).toBe(0); // Always 0 for 2D
+    });
+
+    it('sets direction from Cartesian vector (left)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(0, 1, 0); // +Y = left in ambisonics
+      expect(encoder.azim).toBeCloseTo(90, 5);
+    });
+
+    it('ignores z component', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(1, 0, 100); // z should be ignored
+      expect(encoder.azim).toBeCloseTo(0, 5);
+      expect(encoder.elev).toBe(0);
+    });
+
+    it('sets direction from Cartesian vector (right)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(0, -1, 0); // -Y = right in ambisonics
+      expect(encoder.azim).toBeCloseTo(-90, 5);
+    });
+
+    it('converts Three.js coordinates (forward)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(0, 0, 1, 'threejs'); // +Z = forward in Three.js
+      expect(encoder.azim).toBeCloseTo(0, 5);
+    });
+
+    it('converts Three.js coordinates (right)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(1, 0, 0, 'threejs'); // +X = right in Three.js
+      expect(encoder.azim).toBeCloseTo(-90, 5);
+    });
+
+    it('sets direction from Cartesian vector (back)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(-1, 0, 0); // -X = back in ambisonics
+      expect(Math.abs(encoder.azim)).toBeCloseTo(180, 5);
+    });
+
+    it('handles zero vector gracefully', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // Zero vector is degenerate - just verify it doesn't throw
+      expect(() => encoder.setDirection(0, 0, 0)).not.toThrow();
+    });
+
+    it('handles zero x and y with non-zero z', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // When x=0 and y=0, azimuth is undefined; z is ignored in 2D
+      // This is effectively a zero vector for 2D - just verify no throw
+      expect(() => encoder.setDirection(0, 0, 1)).not.toThrow();
+    });
+  });
+
+  describe('getDirection', () => {
+    it('returns unit vector for front direction', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.azim = 0;
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(1, 5);
+      expect(y).toBeCloseTo(0, 5);
+      expect(z).toBe(0); // Always 0 for 2D
+    });
+
+    it('returns unit vector for left direction', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.azim = 90;
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBeCloseTo(1, 5);
+      expect(z).toBe(0);
+    });
+
+    it('converts to Three.js coordinates (front)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.azim = 0;
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(0, 5);
+      expect(y).toBe(0); // Y always 0 in 2D
+      expect(z).toBeCloseTo(1, 5); // Front in Three.js = +Z
+    });
+
+    it('converts to Three.js coordinates (left)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.azim = 90;
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(-1, 5); // Left in Three.js = -X
+      expect(y).toBe(0);
+      expect(z).toBeCloseTo(0, 5);
+    });
+
+    it('roundtrips through setDirection and getDirection', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(0.6, 0.8, 0);
+      const [x, y, z] = encoder.getDirection();
+      expect(x).toBeCloseTo(0.6, 5);
+      expect(y).toBeCloseTo(0.8, 5);
+      expect(z).toBe(0);
+    });
+
+    it('roundtrips through setDirection and getDirection with threejs coords', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // Three.js 2D vector: x=right, z=forward, y ignored for 2D
+      encoder.setDirection(-0.8, 0, 0.6, 'threejs'); // left-front in Three.js
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(-0.8, 5);
+      expect(y).toBe(0); // Y always 0 in 2D
+      expect(z).toBeCloseTo(0.6, 5);
+    });
+  });
 });
