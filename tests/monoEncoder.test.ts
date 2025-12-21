@@ -274,5 +274,17 @@ describe('monoEncoder', () => {
       expect(result[1]).toBeCloseTo(original[1], 5);
       expect(result[2]).toBeCloseTo(original[2], 5);
     });
+
+    it('roundtrips through setDirection and getDirection with threejs coords', () => {
+      const encoder = new monoEncoder(audioCtx, 1);
+      // Use a normalized vector in Three.js space
+      const s = 1 / Math.sqrt(3);
+      const original = [s, s, s] as [number, number, number];
+      encoder.setDirection(...original, 'threejs');
+      const result = encoder.getDirection('threejs');
+      expect(result[0]).toBeCloseTo(original[0], 5);
+      expect(result[1]).toBeCloseTo(original[1], 5);
+      expect(result[2]).toBeCloseTo(original[2], 5);
+    });
   });
 });

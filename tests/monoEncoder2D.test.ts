@@ -219,5 +219,15 @@ describe('monoEncoder2D', () => {
       expect(y).toBeCloseTo(0.8, 5);
       expect(z).toBe(0);
     });
+
+    it('roundtrips through setDirection and getDirection with threejs coords', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // Three.js 2D vector: x=right, z=forward, y ignored for 2D
+      encoder.setDirection(-0.8, 0, 0.6, 'threejs'); // left-front in Three.js
+      const [x, y, z] = encoder.getDirection('threejs');
+      expect(x).toBeCloseTo(-0.8, 5);
+      expect(y).toBe(0); // Y always 0 in 2D
+      expect(z).toBeCloseTo(0.6, 5);
+    });
   });
 });
