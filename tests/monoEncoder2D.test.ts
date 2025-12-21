@@ -153,6 +153,25 @@ describe('monoEncoder2D', () => {
       encoder.setDirection(1, 0, 0, 'threejs'); // +X = right in Three.js
       expect(encoder.azim).toBeCloseTo(-90, 5);
     });
+
+    it('sets direction from Cartesian vector (back)', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      encoder.setDirection(-1, 0, 0); // -X = back in ambisonics
+      expect(Math.abs(encoder.azim)).toBeCloseTo(180, 5);
+    });
+
+    it('handles zero vector gracefully', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // Zero vector is degenerate - just verify it doesn't throw
+      expect(() => encoder.setDirection(0, 0, 0)).not.toThrow();
+    });
+
+    it('handles zero x and y with non-zero z', () => {
+      const encoder = new monoEncoder2D(audioCtx, 1);
+      // When x=0 and y=0, azimuth is undefined; z is ignored in 2D
+      // This is effectively a zero vector for 2D - just verify no throw
+      expect(() => encoder.setDirection(0, 0, 1)).not.toThrow();
+    });
   });
 
   describe('getDirection', () => {
