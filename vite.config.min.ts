@@ -15,6 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     minify: 'esbuild',
+    // emptyOutDir: false is required to preserve files from the non-minified build
     emptyOutDir: false,
     rollupOptions: {
       external: [],
