@@ -10,6 +10,9 @@ export default defineConfig({
       copyDtsFiles: true,
     }),
   ],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -23,11 +26,17 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     minify: false,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       external: [],
       output: {
         globals: {},
       },
     },
+  },
+  optimizeDeps: {
+    include: ['spherical-harmonic-transform', 'numeric'],
   },
 });

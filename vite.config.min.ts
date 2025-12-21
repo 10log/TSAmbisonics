@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -17,11 +20,17 @@ export default defineConfig({
     minify: 'esbuild',
     // emptyOutDir: false is required to preserve files from the non-minified build
     emptyOutDir: false,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       external: [],
       output: {
         globals: {},
       },
     },
+  },
+  optimizeDeps: {
+    include: ['spherical-harmonic-transform', 'numeric'],
   },
 });
