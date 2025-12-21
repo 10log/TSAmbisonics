@@ -1,5 +1,6 @@
-export type { AmbisonicProcessor, InitializableProcessor, OrientableProcessor, RotatableProcessor, VmicPattern, MirrorPlane, LoaderCallback, } from './types';
+export type { AmbisonicProcessor, InitializableProcessor, OrientableProcessor, RotatableProcessor, VmicPattern, MirrorPlane, LoaderCallback, CoordinateSystem, } from './types';
 export { getAmbisonicChannelCount, getAmbisonicChannelCount2D, degreesToRadians, radiansToDegrees, } from './types';
+export { encodeBuffer, encodeBuffer2D, encodeBufferFromDirection, encodeBuffer2DFromDirection, encodeAndSumBuffers, computeEncodingCoefficients, computeEncodingCoefficients2D, } from './ambi-encodeBuffer';
 export { default as monoEncoder } from './ambi-monoEncoder';
 export { default as monoEncoder2D } from './ambi-monoEncoder2D';
 export { default as orderLimiter } from './ambi-orderLimiter';
