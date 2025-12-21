@@ -54,6 +54,13 @@ export type MirrorPlane = 0 | 1 | 2 | 3;
 export type LoaderCallback = (buffer: AudioBuffer) => void;
 
 /**
+ * Coordinate system conventions for direction vectors.
+ * - 'ambisonics': +X forward, +Y left, +Z up (default ambisonic convention)
+ * - 'threejs': +Z forward, +Y up, +X right (Three.js/WebGL convention)
+ */
+export type CoordinateSystem = 'ambisonics' | 'threejs';
+
+/**
  * Calculates the number of ambisonic channels for a given order (3D).
  * Formula: (order + 1)^2
  */
