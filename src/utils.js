@@ -25,8 +25,8 @@
 /* UTILS */
 ///////////
 
-var jshlib = require('spherical-harmonic-transform');
-var convexhull = require('convex-hull');
+import * as jshlib from 'spherical-harmonic-transform';
+import convexhull from 'convex-hull';
 
 // Inline replacements for numeric library functions (ESM compatibility)
 const numeric = {
