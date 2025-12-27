@@ -15,6 +15,9 @@
     return radians * 180 / Math.PI;
   }
   var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
+  function getDefaultExportFromCjs(x) {
+    return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
+  }
   var numeric1_2_6 = {};
   (function(exports$1) {
     var numeric = exports$1;
@@ -4910,6 +4913,18 @@
     }
     return aziElevR;
   };
+  var convertSph2Cart = function(aziElevR) {
+    var x, y, z;
+    var xyz = new Array(aziElevR.length);
+    for (var i = 0; i < aziElevR.length; i++) {
+      x = Math.cos(aziElevR[i][0]) * Math.cos(aziElevR[i][1]);
+      y = Math.sin(aziElevR[i][0]) * Math.cos(aziElevR[i][1]);
+      z = Math.sin(aziElevR[i][1]);
+      if (aziElevR[0].length == 2) xyz[i] = [x, y, z];
+      else if (aziElevR[0].length == 3) xyz[i] = [aziElevR[i][2] * x, aziElevR[i][2] * y, aziElevR[i][2] * z];
+    }
+    return xyz;
+  };
   var computeRealSH = function(N, data) {
     var azi = new Array(data.length);
     var elev = new Array(data.length);
@@ -5117,13 +5132,1597 @@
   };
   var forwardSHT_1 = forwardSHT;
   var convertCart2Sph_1 = convertCart2Sph;
+  var convertSph2Cart_1 = convertSph2Cart;
   var computeRealSH_1 = computeRealSH;
   var factorial_1 = factorial;
   var recurseLegendrePoly_1 = recurseLegendrePoly;
   var getSHrotMtx_1 = getSHrotMtx;
   var yawPitchRoll2Rzyx_1 = yawPitchRoll2Rzyx;
-  var jshlib = require("spherical-harmonic-transform");
-  var convexhull = require("convex-hull");
+  var ch1d = convexHull1d$1;
+  function convexHull1d$1(points) {
+    var lo = 0;
+    var hi = 0;
+    for (var i = 1; i < points.length; ++i) {
+      if (points[i][0] < points[lo][0]) {
+        lo = i;
+      }
+      if (points[i][0] > points[hi][0]) {
+        hi = i;
+      }
+    }
+    if (lo < hi) {
+      return [[lo], [hi]];
+    } else if (lo > hi) {
+      return [[hi], [lo]];
+    } else {
+      return [[lo]];
+    }
+  }
+  var orientation = { exports: {} };
+  var twoProduct_1 = twoProduct$1;
+  var SPLITTER = +(Math.pow(2, 27) + 1);
+  function twoProduct$1(a, b, result) {
+    var x = a * b;
+    var c = SPLITTER * a;
+    var abig = c - a;
+    var ahi = c - abig;
+    var alo = a - ahi;
+    var d = SPLITTER * b;
+    var bbig = d - b;
+    var bhi = d - bbig;
+    var blo = b - bhi;
+    var err1 = x - ahi * bhi;
+    var err2 = err1 - alo * bhi;
+    var err3 = err2 - ahi * blo;
+    var y = alo * blo - err3;
+    if (result) {
+      result[0] = y;
+      result[1] = x;
+      return result;
+    }
+    return [y, x];
+  }
+  var robustSum = linearExpansionSum;
+  function scalarScalar$1(a, b) {
+    var x = a + b;
+    var bv = x - a;
+    var av = x - bv;
+    var br = b - bv;
+    var ar = a - av;
+    var y = ar + br;
+    if (y) {
+      return [y, x];
+    }
+    return [x];
+  }
+  function linearExpansionSum(e, f) {
+    var ne = e.length | 0;
+    var nf = f.length | 0;
+    if (ne === 1 && nf === 1) {
+      return scalarScalar$1(e[0], f[0]);
+    }
+    var n = ne + nf;
+    var g = new Array(n);
+    var count = 0;
+    var eptr = 0;
+    var fptr = 0;
+    var abs = Math.abs;
+    var ei = e[eptr];
+    var ea = abs(ei);
+    var fi = f[fptr];
+    var fa = abs(fi);
+    var a, b;
+    if (ea < fa) {
+      b = ei;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+        ea = abs(ei);
+      }
+    } else {
+      b = fi;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = f[fptr];
+        fa = abs(fi);
+      }
+    }
+    if (eptr < ne && ea < fa || fptr >= nf) {
+      a = ei;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+        ea = abs(ei);
+      }
+    } else {
+      a = fi;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = f[fptr];
+        fa = abs(fi);
+      }
+    }
+    var x = a + b;
+    var bv = x - a;
+    var y = b - bv;
+    var q0 = y;
+    var q1 = x;
+    var _x, _bv, _av, _br, _ar;
+    while (eptr < ne && fptr < nf) {
+      if (ea < fa) {
+        a = ei;
+        eptr += 1;
+        if (eptr < ne) {
+          ei = e[eptr];
+          ea = abs(ei);
+        }
+      } else {
+        a = fi;
+        fptr += 1;
+        if (fptr < nf) {
+          fi = f[fptr];
+          fa = abs(fi);
+        }
+      }
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+    }
+    while (eptr < ne) {
+      a = ei;
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+      }
+    }
+    while (fptr < nf) {
+      a = fi;
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = f[fptr];
+      }
+    }
+    if (q0) {
+      g[count++] = q0;
+    }
+    if (q1) {
+      g[count++] = q1;
+    }
+    if (!count) {
+      g[count++] = 0;
+    }
+    g.length = count;
+    return g;
+  }
+  var twoSum$1 = fastTwoSum;
+  function fastTwoSum(a, b, result) {
+    var x = a + b;
+    var bv = x - a;
+    var av = x - bv;
+    var br = b - bv;
+    var ar = a - av;
+    if (result) {
+      result[0] = ar + br;
+      result[1] = x;
+      return result;
+    }
+    return [ar + br, x];
+  }
+  var twoProduct = twoProduct_1;
+  var twoSum = twoSum$1;
+  var robustScale = scaleLinearExpansion;
+  function scaleLinearExpansion(e, scale) {
+    var n = e.length;
+    if (n === 1) {
+      var ts = twoProduct(e[0], scale);
+      if (ts[0]) {
+        return ts;
+      }
+      return [ts[1]];
+    }
+    var g = new Array(2 * n);
+    var q = [0.1, 0.1];
+    var t = [0.1, 0.1];
+    var count = 0;
+    twoProduct(e[0], scale, q);
+    if (q[0]) {
+      g[count++] = q[0];
+    }
+    for (var i = 1; i < n; ++i) {
+      twoProduct(e[i], scale, t);
+      var pq = q[1];
+      twoSum(pq, t[0], q);
+      if (q[0]) {
+        g[count++] = q[0];
+      }
+      var a = t[1];
+      var b = q[1];
+      var x = a + b;
+      var bv = x - a;
+      var y = b - bv;
+      q[1] = x;
+      if (y) {
+        g[count++] = y;
+      }
+    }
+    if (q[1]) {
+      g[count++] = q[1];
+    }
+    if (count === 0) {
+      g[count++] = 0;
+    }
+    g.length = count;
+    return g;
+  }
+  var robustDiff = robustSubtract;
+  function scalarScalar(a, b) {
+    var x = a + b;
+    var bv = x - a;
+    var av = x - bv;
+    var br = b - bv;
+    var ar = a - av;
+    var y = ar + br;
+    if (y) {
+      return [y, x];
+    }
+    return [x];
+  }
+  function robustSubtract(e, f) {
+    var ne = e.length | 0;
+    var nf = f.length | 0;
+    if (ne === 1 && nf === 1) {
+      return scalarScalar(e[0], -f[0]);
+    }
+    var n = ne + nf;
+    var g = new Array(n);
+    var count = 0;
+    var eptr = 0;
+    var fptr = 0;
+    var abs = Math.abs;
+    var ei = e[eptr];
+    var ea = abs(ei);
+    var fi = -f[fptr];
+    var fa = abs(fi);
+    var a, b;
+    if (ea < fa) {
+      b = ei;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+        ea = abs(ei);
+      }
+    } else {
+      b = fi;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = -f[fptr];
+        fa = abs(fi);
+      }
+    }
+    if (eptr < ne && ea < fa || fptr >= nf) {
+      a = ei;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+        ea = abs(ei);
+      }
+    } else {
+      a = fi;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = -f[fptr];
+        fa = abs(fi);
+      }
+    }
+    var x = a + b;
+    var bv = x - a;
+    var y = b - bv;
+    var q0 = y;
+    var q1 = x;
+    var _x, _bv, _av, _br, _ar;
+    while (eptr < ne && fptr < nf) {
+      if (ea < fa) {
+        a = ei;
+        eptr += 1;
+        if (eptr < ne) {
+          ei = e[eptr];
+          ea = abs(ei);
+        }
+      } else {
+        a = fi;
+        fptr += 1;
+        if (fptr < nf) {
+          fi = -f[fptr];
+          fa = abs(fi);
+        }
+      }
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+    }
+    while (eptr < ne) {
+      a = ei;
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+      eptr += 1;
+      if (eptr < ne) {
+        ei = e[eptr];
+      }
+    }
+    while (fptr < nf) {
+      a = fi;
+      b = q0;
+      x = a + b;
+      bv = x - a;
+      y = b - bv;
+      if (y) {
+        g[count++] = y;
+      }
+      _x = q1 + x;
+      _bv = _x - q1;
+      _av = _x - _bv;
+      _br = x - _bv;
+      _ar = q1 - _av;
+      q0 = _ar + _br;
+      q1 = _x;
+      fptr += 1;
+      if (fptr < nf) {
+        fi = -f[fptr];
+      }
+    }
+    if (q0) {
+      g[count++] = q0;
+    }
+    if (q1) {
+      g[count++] = q1;
+    }
+    if (!count) {
+      g[count++] = 0;
+    }
+    g.length = count;
+    return g;
+  }
+  (function(module2) {
+    var twoProduct2 = twoProduct_1;
+    var robustSum$1 = robustSum;
+    var robustScale$1 = robustScale;
+    var robustSubtract2 = robustDiff;
+    var NUM_EXPAND = 5;
+    var EPSILON = 11102230246251565e-32;
+    var ERRBOUND3 = (3 + 16 * EPSILON) * EPSILON;
+    var ERRBOUND4 = (7 + 56 * EPSILON) * EPSILON;
+    function orientation_3(sum, prod, scale, sub) {
+      return function orientation3Exact2(m0, m1, m2) {
+        var p = sum(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])));
+        var n = sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0]));
+        var d = sub(p, n);
+        return d[d.length - 1];
+      };
+    }
+    function orientation_4(sum, prod, scale, sub) {
+      return function orientation4Exact2(m0, m1, m2, m3) {
+        var p = sum(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))));
+        var n = sum(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))));
+        var d = sub(p, n);
+        return d[d.length - 1];
+      };
+    }
+    function orientation_5(sum, prod, scale, sub) {
+      return function orientation5Exact(m0, m1, m2, m3, m4) {
+        var p = sum(sum(sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m2[2]), sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), -m3[2]), scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m4[2]))), m1[3]), sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m3[2]), scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m4[2]))), -m2[3]), scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m4[2]))), m3[3]))), sum(scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), -m4[3]), sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m3[2]), scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m3[2]), scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), m4[2]))), -m1[3])))), sum(sum(scale(sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m4[2]))), m3[3]), sum(scale(sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))), -m4[3]), scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), m0[3]))), sum(scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), -m1[3]), sum(scale(sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))), m2[3]), scale(sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))), -m3[3])))));
+        var n = sum(sum(sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m2[2]), sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), -m3[2]), scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m3[2]), scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), m4[2]))), -m2[3])), sum(scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m4[2]))), m3[3]), scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), -m4[3]))), sum(sum(scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m4[2]))), -m1[3])), sum(scale(sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m4[2]))), m2[3]), scale(sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))), -m4[3]))));
+        var d = sub(p, n);
+        return d[d.length - 1];
+      };
+    }
+    function orientation2(n) {
+      var fn = n === 3 ? orientation_3 : n === 4 ? orientation_4 : orientation_5;
+      return fn(robustSum$1, twoProduct2, robustScale$1, robustSubtract2);
+    }
+    var orientation3Exact = orientation2(3);
+    var orientation4Exact = orientation2(4);
+    var CACHED = [
+      function orientation0() {
+        return 0;
+      },
+      function orientation1() {
+        return 0;
+      },
+      function orientation22(a, b) {
+        return b[0] - a[0];
+      },
+      function orientation3(a, b, c) {
+        var l = (a[1] - c[1]) * (b[0] - c[0]);
+        var r = (a[0] - c[0]) * (b[1] - c[1]);
+        var det = l - r;
+        var s;
+        if (l > 0) {
+          if (r <= 0) {
+            return det;
+          } else {
+            s = l + r;
+          }
+        } else if (l < 0) {
+          if (r >= 0) {
+            return det;
+          } else {
+            s = -(l + r);
+          }
+        } else {
+          return det;
+        }
+        var tol = ERRBOUND3 * s;
+        if (det >= tol || det <= -tol) {
+          return det;
+        }
+        return orientation3Exact(a, b, c);
+      },
+      function orientation4(a, b, c, d) {
+        var adx = a[0] - d[0];
+        var bdx = b[0] - d[0];
+        var cdx = c[0] - d[0];
+        var ady = a[1] - d[1];
+        var bdy = b[1] - d[1];
+        var cdy = c[1] - d[1];
+        var adz = a[2] - d[2];
+        var bdz = b[2] - d[2];
+        var cdz = c[2] - d[2];
+        var bdxcdy = bdx * cdy;
+        var cdxbdy = cdx * bdy;
+        var cdxady = cdx * ady;
+        var adxcdy = adx * cdy;
+        var adxbdy = adx * bdy;
+        var bdxady = bdx * ady;
+        var det = adz * (bdxcdy - cdxbdy) + bdz * (cdxady - adxcdy) + cdz * (adxbdy - bdxady);
+        var permanent = (Math.abs(bdxcdy) + Math.abs(cdxbdy)) * Math.abs(adz) + (Math.abs(cdxady) + Math.abs(adxcdy)) * Math.abs(bdz) + (Math.abs(adxbdy) + Math.abs(bdxady)) * Math.abs(cdz);
+        var tol = ERRBOUND4 * permanent;
+        if (det > tol || -det > tol) {
+          return det;
+        }
+        return orientation4Exact(a, b, c, d);
+      }
+    ];
+    function slowOrient(args) {
+      var proc2 = CACHED[args.length];
+      if (!proc2) {
+        proc2 = CACHED[args.length] = orientation2(args.length);
+      }
+      return proc2.apply(void 0, args);
+    }
+    function proc(slow, o0, o1, o2, o3, o4, o5) {
+      return function getOrientation(a0, a1, a2, a3, a4) {
+        switch (arguments.length) {
+          case 0:
+          case 1:
+            return 0;
+          case 2:
+            return o2(a0, a1);
+          case 3:
+            return o3(a0, a1, a2);
+          case 4:
+            return o4(a0, a1, a2, a3);
+          case 5:
+            return o5(a0, a1, a2, a3, a4);
+        }
+        var s = new Array(arguments.length);
+        for (var i = 0; i < arguments.length; ++i) {
+          s[i] = arguments[i];
+        }
+        return slow(s);
+      };
+    }
+    function generateOrientationProc() {
+      while (CACHED.length <= NUM_EXPAND) {
+        CACHED.push(orientation2(CACHED.length));
+      }
+      module2.exports = proc.apply(void 0, [slowOrient].concat(CACHED));
+      for (var i = 0; i <= NUM_EXPAND; ++i) {
+        module2.exports[i] = CACHED[i];
+      }
+    }
+    generateOrientationProc();
+  })(orientation);
+  var orientationExports = orientation.exports;
+  var monotoneConvexHull2d = monotoneConvexHull2D;
+  var orient$2 = orientationExports[3];
+  function monotoneConvexHull2D(points) {
+    var n = points.length;
+    if (n < 3) {
+      var result = new Array(n);
+      for (var i = 0; i < n; ++i) {
+        result[i] = i;
+      }
+      if (n === 2 && points[0][0] === points[1][0] && points[0][1] === points[1][1]) {
+        return [0];
+      }
+      return result;
+    }
+    var sorted = new Array(n);
+    for (var i = 0; i < n; ++i) {
+      sorted[i] = i;
+    }
+    sorted.sort(function(a, b) {
+      var d = points[a][0] - points[b][0];
+      if (d) {
+        return d;
+      }
+      return points[a][1] - points[b][1];
+    });
+    var lower = [sorted[0], sorted[1]];
+    var upper = [sorted[0], sorted[1]];
+    for (var i = 2; i < n; ++i) {
+      var idx = sorted[i];
+      var p = points[idx];
+      var m = lower.length;
+      while (m > 1 && orient$2(
+        points[lower[m - 2]],
+        points[lower[m - 1]],
+        p
+      ) <= 0) {
+        m -= 1;
+        lower.pop();
+      }
+      lower.push(idx);
+      m = upper.length;
+      while (m > 1 && orient$2(
+        points[upper[m - 2]],
+        points[upper[m - 1]],
+        p
+      ) >= 0) {
+        m -= 1;
+        upper.pop();
+      }
+      upper.push(idx);
+    }
+    var result = new Array(upper.length + lower.length - 2);
+    var ptr = 0;
+    for (var i = 0, nl = lower.length; i < nl; ++i) {
+      result[ptr++] = lower[i];
+    }
+    for (var j = upper.length - 2; j > 0; --j) {
+      result[ptr++] = upper[j];
+    }
+    return result;
+  }
+  var ch2d = convexHull2D;
+  var monotoneHull = monotoneConvexHull2d;
+  function convexHull2D(points) {
+    var hull = monotoneHull(points);
+    var h = hull.length;
+    if (h <= 2) {
+      return [];
+    }
+    var edges = new Array(h);
+    var a = hull[h - 1];
+    for (var i = 0; i < h; ++i) {
+      var b = hull[i];
+      edges[i] = [a, b];
+      a = b;
+    }
+    return edges;
+  }
+  var topology = {};
+  var twiddle = {};
+  var INT_BITS = 32;
+  twiddle.INT_BITS = INT_BITS;
+  twiddle.INT_MAX = 2147483647;
+  twiddle.INT_MIN = -1 << INT_BITS - 1;
+  twiddle.sign = function(v) {
+    return (v > 0) - (v < 0);
+  };
+  twiddle.abs = function(v) {
+    var mask = v >> INT_BITS - 1;
+    return (v ^ mask) - mask;
+  };
+  twiddle.min = function(x, y) {
+    return y ^ (x ^ y) & -(x < y);
+  };
+  twiddle.max = function(x, y) {
+    return x ^ (x ^ y) & -(x < y);
+  };
+  twiddle.isPow2 = function(v) {
+    return !(v & v - 1) && !!v;
+  };
+  twiddle.log2 = function(v) {
+    var r, shift;
+    r = (v > 65535) << 4;
+    v >>>= r;
+    shift = (v > 255) << 3;
+    v >>>= shift;
+    r |= shift;
+    shift = (v > 15) << 2;
+    v >>>= shift;
+    r |= shift;
+    shift = (v > 3) << 1;
+    v >>>= shift;
+    r |= shift;
+    return r | v >> 1;
+  };
+  twiddle.log10 = function(v) {
+    return v >= 1e9 ? 9 : v >= 1e8 ? 8 : v >= 1e7 ? 7 : v >= 1e6 ? 6 : v >= 1e5 ? 5 : v >= 1e4 ? 4 : v >= 1e3 ? 3 : v >= 100 ? 2 : v >= 10 ? 1 : 0;
+  };
+  twiddle.popCount = function(v) {
+    v = v - (v >>> 1 & 1431655765);
+    v = (v & 858993459) + (v >>> 2 & 858993459);
+    return (v + (v >>> 4) & 252645135) * 16843009 >>> 24;
+  };
+  function countTrailingZeros(v) {
+    var c = 32;
+    v &= -v;
+    if (v) c--;
+    if (v & 65535) c -= 16;
+    if (v & 16711935) c -= 8;
+    if (v & 252645135) c -= 4;
+    if (v & 858993459) c -= 2;
+    if (v & 1431655765) c -= 1;
+    return c;
+  }
+  twiddle.countTrailingZeros = countTrailingZeros;
+  twiddle.nextPow2 = function(v) {
+    v += v === 0;
+    --v;
+    v |= v >>> 1;
+    v |= v >>> 2;
+    v |= v >>> 4;
+    v |= v >>> 8;
+    v |= v >>> 16;
+    return v + 1;
+  };
+  twiddle.prevPow2 = function(v) {
+    v |= v >>> 1;
+    v |= v >>> 2;
+    v |= v >>> 4;
+    v |= v >>> 8;
+    v |= v >>> 16;
+    return v - (v >>> 1);
+  };
+  twiddle.parity = function(v) {
+    v ^= v >>> 16;
+    v ^= v >>> 8;
+    v ^= v >>> 4;
+    v &= 15;
+    return 27030 >>> v & 1;
+  };
+  var REVERSE_TABLE = new Array(256);
+  (function(tab) {
+    for (var i = 0; i < 256; ++i) {
+      var v = i, r = i, s = 7;
+      for (v >>>= 1; v; v >>>= 1) {
+        r <<= 1;
+        r |= v & 1;
+        --s;
+      }
+      tab[i] = r << s & 255;
+    }
+  })(REVERSE_TABLE);
+  twiddle.reverse = function(v) {
+    return REVERSE_TABLE[v & 255] << 24 | REVERSE_TABLE[v >>> 8 & 255] << 16 | REVERSE_TABLE[v >>> 16 & 255] << 8 | REVERSE_TABLE[v >>> 24 & 255];
+  };
+  twiddle.interleave2 = function(x, y) {
+    x &= 65535;
+    x = (x | x << 8) & 16711935;
+    x = (x | x << 4) & 252645135;
+    x = (x | x << 2) & 858993459;
+    x = (x | x << 1) & 1431655765;
+    y &= 65535;
+    y = (y | y << 8) & 16711935;
+    y = (y | y << 4) & 252645135;
+    y = (y | y << 2) & 858993459;
+    y = (y | y << 1) & 1431655765;
+    return x | y << 1;
+  };
+  twiddle.deinterleave2 = function(v, n) {
+    v = v >>> n & 1431655765;
+    v = (v | v >>> 1) & 858993459;
+    v = (v | v >>> 2) & 252645135;
+    v = (v | v >>> 4) & 16711935;
+    v = (v | v >>> 16) & 65535;
+    return v << 16 >> 16;
+  };
+  twiddle.interleave3 = function(x, y, z) {
+    x &= 1023;
+    x = (x | x << 16) & 4278190335;
+    x = (x | x << 8) & 251719695;
+    x = (x | x << 4) & 3272356035;
+    x = (x | x << 2) & 1227133513;
+    y &= 1023;
+    y = (y | y << 16) & 4278190335;
+    y = (y | y << 8) & 251719695;
+    y = (y | y << 4) & 3272356035;
+    y = (y | y << 2) & 1227133513;
+    x |= y << 1;
+    z &= 1023;
+    z = (z | z << 16) & 4278190335;
+    z = (z | z << 8) & 251719695;
+    z = (z | z << 4) & 3272356035;
+    z = (z | z << 2) & 1227133513;
+    return x | z << 2;
+  };
+  twiddle.deinterleave3 = function(v, n) {
+    v = v >>> n & 1227133513;
+    v = (v | v >>> 2) & 3272356035;
+    v = (v | v >>> 4) & 251719695;
+    v = (v | v >>> 8) & 4278190335;
+    v = (v | v >>> 16) & 1023;
+    return v << 22 >> 22;
+  };
+  twiddle.nextCombination = function(v) {
+    var t = v | v - 1;
+    return t + 1 | (~t & -~t) - 1 >>> countTrailingZeros(v) + 1;
+  };
+  var unionFind = UnionFind$1;
+  function UnionFind$1(count) {
+    this.roots = new Array(count);
+    this.ranks = new Array(count);
+    for (var i = 0; i < count; ++i) {
+      this.roots[i] = i;
+      this.ranks[i] = 0;
+    }
+  }
+  var proto$1 = UnionFind$1.prototype;
+  Object.defineProperty(proto$1, "length", {
+    "get": function() {
+      return this.roots.length;
+    }
+  });
+  proto$1.makeSet = function() {
+    var n = this.roots.length;
+    this.roots.push(n);
+    this.ranks.push(0);
+    return n;
+  };
+  proto$1.find = function(x) {
+    var x0 = x;
+    var roots = this.roots;
+    while (roots[x] !== x) {
+      x = roots[x];
+    }
+    while (roots[x0] !== x) {
+      var y = roots[x0];
+      roots[x0] = x;
+      x0 = y;
+    }
+    return x;
+  };
+  proto$1.link = function(x, y) {
+    var xr = this.find(x), yr = this.find(y);
+    if (xr === yr) {
+      return;
+    }
+    var ranks = this.ranks, roots = this.roots, xd = ranks[xr], yd = ranks[yr];
+    if (xd < yd) {
+      roots[xr] = yr;
+    } else if (yd < xd) {
+      roots[yr] = xr;
+    } else {
+      roots[yr] = xr;
+      ++ranks[xr];
+    }
+  };
+  var bits = twiddle, UnionFind = unionFind;
+  function dimension(cells) {
+    var d = 0, max = Math.max;
+    for (var i = 0, il = cells.length; i < il; ++i) {
+      d = max(d, cells[i].length);
+    }
+    return d - 1;
+  }
+  topology.dimension = dimension;
+  function countVertices(cells) {
+    var vc = -1, max = Math.max;
+    for (var i = 0, il = cells.length; i < il; ++i) {
+      var c = cells[i];
+      for (var j = 0, jl = c.length; j < jl; ++j) {
+        vc = max(vc, c[j]);
+      }
+    }
+    return vc + 1;
+  }
+  topology.countVertices = countVertices;
+  function cloneCells(cells) {
+    var ncells = new Array(cells.length);
+    for (var i = 0, il = cells.length; i < il; ++i) {
+      ncells[i] = cells[i].slice(0);
+    }
+    return ncells;
+  }
+  topology.cloneCells = cloneCells;
+  function compareCells(a, b) {
+    var n = a.length, t = a.length - b.length, min = Math.min;
+    if (t) {
+      return t;
+    }
+    switch (n) {
+      case 0:
+        return 0;
+      case 1:
+        return a[0] - b[0];
+      case 2:
+        var d = a[0] + a[1] - b[0] - b[1];
+        if (d) {
+          return d;
+        }
+        return min(a[0], a[1]) - min(b[0], b[1]);
+      case 3:
+        var l1 = a[0] + a[1], m1 = b[0] + b[1];
+        d = l1 + a[2] - (m1 + b[2]);
+        if (d) {
+          return d;
+        }
+        var l0 = min(a[0], a[1]), m0 = min(b[0], b[1]), d = min(l0, a[2]) - min(m0, b[2]);
+        if (d) {
+          return d;
+        }
+        return min(l0 + a[2], l1) - min(m0 + b[2], m1);
+      default:
+        var as = a.slice(0);
+        as.sort();
+        var bs = b.slice(0);
+        bs.sort();
+        for (var i = 0; i < n; ++i) {
+          t = as[i] - bs[i];
+          if (t) {
+            return t;
+          }
+        }
+        return 0;
+    }
+  }
+  topology.compareCells = compareCells;
+  function compareZipped(a, b) {
+    return compareCells(a[0], b[0]);
+  }
+  function normalize(cells, attr) {
+    if (attr) {
+      var len = cells.length;
+      var zipped = new Array(len);
+      for (var i = 0; i < len; ++i) {
+        zipped[i] = [cells[i], attr[i]];
+      }
+      zipped.sort(compareZipped);
+      for (var i = 0; i < len; ++i) {
+        cells[i] = zipped[i][0];
+        attr[i] = zipped[i][1];
+      }
+      return cells;
+    } else {
+      cells.sort(compareCells);
+      return cells;
+    }
+  }
+  topology.normalize = normalize;
+  function unique(cells) {
+    if (cells.length === 0) {
+      return [];
+    }
+    var ptr = 1, len = cells.length;
+    for (var i = 1; i < len; ++i) {
+      var a = cells[i];
+      if (compareCells(a, cells[i - 1])) {
+        if (i === ptr) {
+          ptr++;
+          continue;
+        }
+        cells[ptr++] = a;
+      }
+    }
+    cells.length = ptr;
+    return cells;
+  }
+  topology.unique = unique;
+  function findCell(cells, c) {
+    var lo = 0, hi = cells.length - 1, r = -1;
+    while (lo <= hi) {
+      var mid = lo + hi >> 1, s = compareCells(cells[mid], c);
+      if (s <= 0) {
+        if (s === 0) {
+          r = mid;
+        }
+        lo = mid + 1;
+      } else if (s > 0) {
+        hi = mid - 1;
+      }
+    }
+    return r;
+  }
+  topology.findCell = findCell;
+  function incidence(from_cells, to_cells) {
+    var index = new Array(from_cells.length);
+    for (var i = 0, il = index.length; i < il; ++i) {
+      index[i] = [];
+    }
+    var b = [];
+    for (var i = 0, n = to_cells.length; i < n; ++i) {
+      var c = to_cells[i];
+      var cl = c.length;
+      for (var k2 = 1, kn = 1 << cl; k2 < kn; ++k2) {
+        b.length = bits.popCount(k2);
+        var l = 0;
+        for (var j = 0; j < cl; ++j) {
+          if (k2 & 1 << j) {
+            b[l++] = c[j];
+          }
+        }
+        var idx = findCell(from_cells, b);
+        if (idx < 0) {
+          continue;
+        }
+        while (true) {
+          index[idx++].push(i);
+          if (idx >= from_cells.length || compareCells(from_cells[idx], b) !== 0) {
+            break;
+          }
+        }
+      }
+    }
+    return index;
+  }
+  topology.incidence = incidence;
+  function dual(cells, vertex_count) {
+    if (!vertex_count) {
+      return incidence(unique(skeleton(cells, 0)), cells);
+    }
+    var res = new Array(vertex_count);
+    for (var i = 0; i < vertex_count; ++i) {
+      res[i] = [];
+    }
+    for (var i = 0, len = cells.length; i < len; ++i) {
+      var c = cells[i];
+      for (var j = 0, cl = c.length; j < cl; ++j) {
+        res[c[j]].push(i);
+      }
+    }
+    return res;
+  }
+  topology.dual = dual;
+  function explode(cells) {
+    var result = [];
+    for (var i = 0, il = cells.length; i < il; ++i) {
+      var c = cells[i], cl = c.length | 0;
+      for (var j = 1, jl = 1 << cl; j < jl; ++j) {
+        var b = [];
+        for (var k2 = 0; k2 < cl; ++k2) {
+          if (j >>> k2 & 1) {
+            b.push(c[k2]);
+          }
+        }
+        result.push(b);
+      }
+    }
+    return normalize(result);
+  }
+  topology.explode = explode;
+  function skeleton(cells, n) {
+    if (n < 0) {
+      return [];
+    }
+    var result = [], k0 = (1 << n + 1) - 1;
+    for (var i = 0; i < cells.length; ++i) {
+      var c = cells[i];
+      for (var k2 = k0; k2 < 1 << c.length; k2 = bits.nextCombination(k2)) {
+        var b = new Array(n + 1), l = 0;
+        for (var j = 0; j < c.length; ++j) {
+          if (k2 & 1 << j) {
+            b[l++] = c[j];
+          }
+        }
+        result.push(b);
+      }
+    }
+    return normalize(result);
+  }
+  topology.skeleton = skeleton;
+  function boundary(cells) {
+    var res = [];
+    for (var i = 0, il = cells.length; i < il; ++i) {
+      var c = cells[i];
+      for (var j = 0, cl = c.length; j < cl; ++j) {
+        var b = new Array(c.length - 1);
+        for (var k2 = 0, l = 0; k2 < cl; ++k2) {
+          if (k2 !== j) {
+            b[l++] = c[k2];
+          }
+        }
+        res.push(b);
+      }
+    }
+    return normalize(res);
+  }
+  topology.boundary = boundary;
+  function connectedComponents_dense(cells, vertex_count) {
+    var labels = new UnionFind(vertex_count);
+    for (var i = 0; i < cells.length; ++i) {
+      var c = cells[i];
+      for (var j = 0; j < c.length; ++j) {
+        for (var k2 = j + 1; k2 < c.length; ++k2) {
+          labels.link(c[j], c[k2]);
+        }
+      }
+    }
+    var components = [], component_labels = labels.ranks;
+    for (var i = 0; i < component_labels.length; ++i) {
+      component_labels[i] = -1;
+    }
+    for (var i = 0; i < cells.length; ++i) {
+      var l = labels.find(cells[i][0]);
+      if (component_labels[l] < 0) {
+        component_labels[l] = components.length;
+        components.push([cells[i].slice(0)]);
+      } else {
+        components[component_labels[l]].push(cells[i].slice(0));
+      }
+    }
+    return components;
+  }
+  function connectedComponents_sparse(cells) {
+    var vertices = unique(normalize(skeleton(cells, 0))), labels = new UnionFind(vertices.length);
+    for (var i = 0; i < cells.length; ++i) {
+      var c = cells[i];
+      for (var j = 0; j < c.length; ++j) {
+        var vj = findCell(vertices, [c[j]]);
+        for (var k2 = j + 1; k2 < c.length; ++k2) {
+          labels.link(vj, findCell(vertices, [c[k2]]));
+        }
+      }
+    }
+    var components = [], component_labels = labels.ranks;
+    for (var i = 0; i < component_labels.length; ++i) {
+      component_labels[i] = -1;
+    }
+    for (var i = 0; i < cells.length; ++i) {
+      var l = labels.find(findCell(vertices, [cells[i][0]]));
+      if (component_labels[l] < 0) {
+        component_labels[l] = components.length;
+        components.push([cells[i].slice(0)]);
+      } else {
+        components[component_labels[l]].push(cells[i].slice(0));
+      }
+    }
+    return components;
+  }
+  function connectedComponents(cells, vertex_count) {
+    if (vertex_count) {
+      return connectedComponents_dense(cells, vertex_count);
+    }
+    return connectedComponents_sparse(cells);
+  }
+  topology.connectedComponents = connectedComponents;
+  var ich$1 = incrementalConvexHull;
+  var orient$1 = orientationExports;
+  var compareCell = topology.compareCells;
+  function Simplex(vertices, adjacent, boundary2) {
+    this.vertices = vertices;
+    this.adjacent = adjacent;
+    this.boundary = boundary2;
+    this.lastVisited = -1;
+  }
+  Simplex.prototype.flip = function() {
+    var t = this.vertices[0];
+    this.vertices[0] = this.vertices[1];
+    this.vertices[1] = t;
+    var u = this.adjacent[0];
+    this.adjacent[0] = this.adjacent[1];
+    this.adjacent[1] = u;
+  };
+  function GlueFacet(vertices, cell, index) {
+    this.vertices = vertices;
+    this.cell = cell;
+    this.index = index;
+  }
+  function compareGlue(a, b) {
+    return compareCell(a.vertices, b.vertices);
+  }
+  function bakeOrient(d) {
+    var code = ["function orient(){var tuple=this.tuple;return test("];
+    for (var i = 0; i <= d; ++i) {
+      if (i > 0) {
+        code.push(",");
+      }
+      code.push("tuple[", i, "]");
+    }
+    code.push(")}return orient");
+    var proc = new Function("test", code.join(""));
+    var test = orient$1[d + 1];
+    if (!test) {
+      test = orient$1;
+    }
+    return proc(test);
+  }
+  var BAKED = [];
+  function Triangulation(dimension2, vertices, simplices) {
+    this.dimension = dimension2;
+    this.vertices = vertices;
+    this.simplices = simplices;
+    this.interior = simplices.filter(function(c) {
+      return !c.boundary;
+    });
+    this.tuple = new Array(dimension2 + 1);
+    for (var i = 0; i <= dimension2; ++i) {
+      this.tuple[i] = this.vertices[i];
+    }
+    var o = BAKED[dimension2];
+    if (!o) {
+      o = BAKED[dimension2] = bakeOrient(dimension2);
+    }
+    this.orient = o;
+  }
+  var proto = Triangulation.prototype;
+  proto.handleBoundaryDegeneracy = function(cell, point) {
+    var d = this.dimension;
+    var n = this.vertices.length - 1;
+    var tuple = this.tuple;
+    var verts = this.vertices;
+    var toVisit = [cell];
+    cell.lastVisited = -n;
+    while (toVisit.length > 0) {
+      cell = toVisit.pop();
+      cell.vertices;
+      var cellAdj = cell.adjacent;
+      for (var i = 0; i <= d; ++i) {
+        var neighbor = cellAdj[i];
+        if (!neighbor.boundary || neighbor.lastVisited <= -n) {
+          continue;
+        }
+        var nv = neighbor.vertices;
+        for (var j = 0; j <= d; ++j) {
+          var vv = nv[j];
+          if (vv < 0) {
+            tuple[j] = point;
+          } else {
+            tuple[j] = verts[vv];
+          }
+        }
+        var o = this.orient();
+        if (o > 0) {
+          return neighbor;
+        }
+        neighbor.lastVisited = -n;
+        if (o === 0) {
+          toVisit.push(neighbor);
+        }
+      }
+    }
+    return null;
+  };
+  proto.walk = function(point, random) {
+    var n = this.vertices.length - 1;
+    var d = this.dimension;
+    var verts = this.vertices;
+    var tuple = this.tuple;
+    var initIndex = random ? this.interior.length * Math.random() | 0 : this.interior.length - 1;
+    var cell = this.interior[initIndex];
+    outerLoop:
+      while (!cell.boundary) {
+        var cellVerts = cell.vertices;
+        var cellAdj = cell.adjacent;
+        for (var i = 0; i <= d; ++i) {
+          tuple[i] = verts[cellVerts[i]];
+        }
+        cell.lastVisited = n;
+        for (var i = 0; i <= d; ++i) {
+          var neighbor = cellAdj[i];
+          if (neighbor.lastVisited >= n) {
+            continue;
+          }
+          var prev = tuple[i];
+          tuple[i] = point;
+          var o = this.orient();
+          tuple[i] = prev;
+          if (o < 0) {
+            cell = neighbor;
+            continue outerLoop;
+          } else {
+            if (!neighbor.boundary) {
+              neighbor.lastVisited = n;
+            } else {
+              neighbor.lastVisited = -n;
+            }
+          }
+        }
+        return;
+      }
+    return cell;
+  };
+  proto.addPeaks = function(point, cell) {
+    var n = this.vertices.length - 1;
+    var d = this.dimension;
+    var verts = this.vertices;
+    var tuple = this.tuple;
+    var interior = this.interior;
+    var simplices = this.simplices;
+    var tovisit = [cell];
+    cell.lastVisited = n;
+    cell.vertices[cell.vertices.indexOf(-1)] = n;
+    cell.boundary = false;
+    interior.push(cell);
+    var glueFacets = [];
+    while (tovisit.length > 0) {
+      var cell = tovisit.pop();
+      var cellVerts = cell.vertices;
+      var cellAdj = cell.adjacent;
+      var indexOfN = cellVerts.indexOf(n);
+      if (indexOfN < 0) {
+        continue;
+      }
+      for (var i = 0; i <= d; ++i) {
+        if (i === indexOfN) {
+          continue;
+        }
+        var neighbor = cellAdj[i];
+        if (!neighbor.boundary || neighbor.lastVisited >= n) {
+          continue;
+        }
+        var nv = neighbor.vertices;
+        if (neighbor.lastVisited !== -n) {
+          var indexOfNeg1 = 0;
+          for (var j = 0; j <= d; ++j) {
+            if (nv[j] < 0) {
+              indexOfNeg1 = j;
+              tuple[j] = point;
+            } else {
+              tuple[j] = verts[nv[j]];
+            }
+          }
+          var o = this.orient();
+          if (o > 0) {
+            nv[indexOfNeg1] = n;
+            neighbor.boundary = false;
+            interior.push(neighbor);
+            tovisit.push(neighbor);
+            neighbor.lastVisited = n;
+            continue;
+          } else {
+            neighbor.lastVisited = -n;
+          }
+        }
+        var na = neighbor.adjacent;
+        var vverts = cellVerts.slice();
+        var vadj = cellAdj.slice();
+        var ncell = new Simplex(vverts, vadj, true);
+        simplices.push(ncell);
+        var opposite = na.indexOf(cell);
+        if (opposite < 0) {
+          continue;
+        }
+        na[opposite] = ncell;
+        vadj[indexOfN] = neighbor;
+        vverts[i] = -1;
+        vadj[i] = cell;
+        cellAdj[i] = ncell;
+        ncell.flip();
+        for (var j = 0; j <= d; ++j) {
+          var uu = vverts[j];
+          if (uu < 0 || uu === n) {
+            continue;
+          }
+          var nface = new Array(d - 1);
+          var nptr = 0;
+          for (var k2 = 0; k2 <= d; ++k2) {
+            var vv = vverts[k2];
+            if (vv < 0 || k2 === j) {
+              continue;
+            }
+            nface[nptr++] = vv;
+          }
+          glueFacets.push(new GlueFacet(nface, ncell, j));
+        }
+      }
+    }
+    glueFacets.sort(compareGlue);
+    for (var i = 0; i + 1 < glueFacets.length; i += 2) {
+      var a = glueFacets[i];
+      var b = glueFacets[i + 1];
+      var ai = a.index;
+      var bi = b.index;
+      if (ai < 0 || bi < 0) {
+        continue;
+      }
+      a.cell.adjacent[a.index] = b.cell;
+      b.cell.adjacent[b.index] = a.cell;
+    }
+  };
+  proto.insert = function(point, random) {
+    var verts = this.vertices;
+    verts.push(point);
+    var cell = this.walk(point, random);
+    if (!cell) {
+      return;
+    }
+    var d = this.dimension;
+    var tuple = this.tuple;
+    for (var i = 0; i <= d; ++i) {
+      var vv = cell.vertices[i];
+      if (vv < 0) {
+        tuple[i] = point;
+      } else {
+        tuple[i] = verts[vv];
+      }
+    }
+    var o = this.orient(tuple);
+    if (o < 0) {
+      return;
+    } else if (o === 0) {
+      cell = this.handleBoundaryDegeneracy(cell, point);
+      if (!cell) {
+        return;
+      }
+    }
+    this.addPeaks(point, cell);
+  };
+  proto.boundary = function() {
+    var d = this.dimension;
+    var boundary2 = [];
+    var cells = this.simplices;
+    var nc = cells.length;
+    for (var i = 0; i < nc; ++i) {
+      var c = cells[i];
+      if (c.boundary) {
+        var bcell = new Array(d);
+        var cv = c.vertices;
+        var ptr = 0;
+        var parity = 0;
+        for (var j = 0; j <= d; ++j) {
+          if (cv[j] >= 0) {
+            bcell[ptr++] = cv[j];
+          } else {
+            parity = j & 1;
+          }
+        }
+        if (parity === (d & 1)) {
+          var t = bcell[0];
+          bcell[0] = bcell[1];
+          bcell[1] = t;
+        }
+        boundary2.push(bcell);
+      }
+    }
+    return boundary2;
+  };
+  function incrementalConvexHull(points, randomSearch) {
+    var n = points.length;
+    if (n === 0) {
+      throw new Error("Must have at least d+1 points");
+    }
+    var d = points[0].length;
+    if (n <= d) {
+      throw new Error("Must input at least d+1 points");
+    }
+    var initialSimplex = points.slice(0, d + 1);
+    var o = orient$1.apply(void 0, initialSimplex);
+    if (o === 0) {
+      throw new Error("Input not in general position");
+    }
+    var initialCoords = new Array(d + 1);
+    for (var i = 0; i <= d; ++i) {
+      initialCoords[i] = i;
+    }
+    if (o < 0) {
+      initialCoords[0] = 1;
+      initialCoords[1] = 0;
+    }
+    var initialCell = new Simplex(initialCoords, new Array(d + 1), false);
+    var boundary2 = initialCell.adjacent;
+    var list = new Array(d + 2);
+    for (var i = 0; i <= d; ++i) {
+      var verts = initialCoords.slice();
+      for (var j = 0; j <= d; ++j) {
+        if (j === i) {
+          verts[j] = -1;
+        }
+      }
+      var t = verts[0];
+      verts[0] = verts[1];
+      verts[1] = t;
+      var cell = new Simplex(verts, new Array(d + 1), true);
+      boundary2[i] = cell;
+      list[i] = cell;
+    }
+    list[d + 1] = initialCell;
+    for (var i = 0; i <= d; ++i) {
+      var verts = boundary2[i].vertices;
+      var adj = boundary2[i].adjacent;
+      for (var j = 0; j <= d; ++j) {
+        var v = verts[j];
+        if (v < 0) {
+          adj[j] = initialCell;
+          continue;
+        }
+        for (var k2 = 0; k2 <= d; ++k2) {
+          if (boundary2[k2].vertices.indexOf(v) < 0) {
+            adj[j] = boundary2[k2];
+          }
+        }
+      }
+    }
+    var triangles = new Triangulation(d, initialSimplex, list);
+    var useRandom = !!randomSearch;
+    for (var i = d + 1; i < n; ++i) {
+      triangles.insert(points[i], useRandom);
+    }
+    return triangles.boundary();
+  }
+  var aff$1 = affineHull;
+  var orient = orientationExports;
+  function linearlyIndependent(points, d) {
+    var nhull = new Array(d + 1);
+    for (var i = 0; i < points.length; ++i) {
+      nhull[i] = points[i];
+    }
+    for (var i = 0; i <= points.length; ++i) {
+      for (var j = points.length; j <= d; ++j) {
+        var x = new Array(d);
+        for (var k2 = 0; k2 < d; ++k2) {
+          x[k2] = Math.pow(j + 1 - i, k2);
+        }
+        nhull[j] = x;
+      }
+      var o = orient.apply(void 0, nhull);
+      if (o) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function affineHull(points) {
+    var n = points.length;
+    if (n === 0) {
+      return [];
+    }
+    if (n === 1) {
+      return [0];
+    }
+    var d = points[0].length;
+    var frame = [points[0]];
+    var index = [0];
+    for (var i = 1; i < n; ++i) {
+      frame.push(points[i]);
+      if (!linearlyIndependent(frame, d)) {
+        frame.pop();
+        continue;
+      }
+      index.push(i);
+      if (index.length === d + 1) {
+        return index;
+      }
+    }
+    return index;
+  }
+  var chnd = convexHullnD;
+  var ich = ich$1;
+  var aff = aff$1;
+  function permute(points, front) {
+    var n = points.length;
+    var npoints = new Array(n);
+    for (var i = 0; i < front.length; ++i) {
+      npoints[i] = points[front[i]];
+    }
+    var ptr = front.length;
+    for (var i = 0; i < n; ++i) {
+      if (front.indexOf(i) < 0) {
+        npoints[ptr++] = points[i];
+      }
+    }
+    return npoints;
+  }
+  function invPermute(cells, front) {
+    var nc = cells.length;
+    var nf = front.length;
+    for (var i = 0; i < nc; ++i) {
+      var c = cells[i];
+      for (var j = 0; j < c.length; ++j) {
+        var x = c[j];
+        if (x < nf) {
+          c[j] = front[x];
+        } else {
+          x = x - nf;
+          for (var k2 = 0; k2 < nf; ++k2) {
+            if (x >= front[k2]) {
+              x += 1;
+            }
+          }
+          c[j] = x;
+        }
+      }
+    }
+    return cells;
+  }
+  function convexHullnD(points, d) {
+    try {
+      return ich(points, true);
+    } catch (e) {
+      var ah = aff(points);
+      if (ah.length <= d) {
+        return [];
+      }
+      var npoints = permute(points, ah);
+      var nhull = ich(npoints, true);
+      return invPermute(nhull, ah);
+    }
+  }
+  var convexHull1d = ch1d;
+  var convexHull2d = ch2d;
+  var convexHullnd = chnd;
+  var ch = convexHull;
+  function convexHull(points) {
+    var n = points.length;
+    if (n === 0) {
+      return [];
+    } else if (n === 1) {
+      return [[0]];
+    }
+    var d = points[0].length;
+    if (d === 0) {
+      return [];
+    } else if (d === 1) {
+      return convexHull1d(points);
+    } else if (d === 2) {
+      return convexHull2d(points);
+    }
+    return convexHullnd(points, d);
+  }
+  const convexhull = /* @__PURE__ */ getDefaultExportFromCjs(ch);
   const numeric = {
     // Element-wise multiplication: array * scalar or scalar * array
     mul: function(a, b) {
@@ -5407,7 +7006,7 @@
   }
   function getAmbisonicDecMtx(hrtf_dirs_deg, order) {
     var hrtf_dirs_rad = deg2rad(hrtf_dirs_deg);
-    var vertices = jshlib.convertSph2Cart(hrtf_dirs_rad);
+    var vertices = convertSph2Cart_1(hrtf_dirs_rad);
     var triplets = convexhull(vertices);
     var nTri = triplets.length;
     var nHRTFs = hrtf_dirs_rad.length;
@@ -5430,7 +7029,7 @@
     var td_dirs_rad = deg2rad(td_dirs_deg);
     var G_td = vbap3(td_dirs_rad, triplets, layoutInvMtx, nHRTFs);
     G_td = numeric.transpose(G_td);
-    var Y_td = jshlib.computeRealSH(order, td_dirs_rad);
+    var Y_td = computeRealSH_1(order, td_dirs_rad);
     Y_td = numeric.transpose(Y_td);
     var nTD = td_dirs_rad.length;
     var M_dec = numeric.dotMMsmall(G_td, Y_td);
@@ -5445,7 +7044,7 @@
       return Math.min.apply(null, numArray);
     }
     var gainMtx = new Array(nDirs);
-    var U2 = jshlib.convertSph2Cart(dirs_rad);
+    var U2 = convertSph2Cart_1(dirs_rad);
     for (let ns = 0; ns < nDirs; ns++) {
       let u = U2[ns];
       let gains = new Array(nLS);
@@ -5475,7 +7074,7 @@
   };
   function createNearestLookup(dirs_deg, ang_res) {
     var nDirs = dirs_deg.length;
-    var dirs_xyz = jshlib.convertSph2Cart(deg2rad(dirs_deg));
+    var dirs_xyz = convertSph2Cart_1(deg2rad(dirs_deg));
     var nAzi = Math.round(360 / ang_res[0]) + 1;
     var nEle = Math.round(180 / ang_res[1]) + 1;
     var azi = new Array(nAzi);
@@ -5487,7 +7086,7 @@
     var nearestLookup = new Array(nGrid);
     for (let i = 0; i < nGrid; i++) {
       let grid_deg = [[i % nAzi * ang_res[0] - 180, Math.floor(i / nAzi) * ang_res[1] - 90]];
-      let grid_xyz = jshlib.convertSph2Cart(deg2rad(grid_deg));
+      let grid_xyz = convertSph2Cart_1(deg2rad(grid_deg));
       let minVal = 1e3;
       for (let j = 0; j < nDirs; j++) {
         let newMinVal = numeric.sum(numeric.pow(numeric.sub(grid_xyz[0], dirs_xyz[j]), 2));
@@ -7458,11 +9057,11 @@
     const numSamples = monoSamples.length;
     const coeffs = computeEncodingCoefficients(azim, elev, order);
     const output = new Array(nCh);
-    for (let ch = 0; ch < nCh; ch++) {
-      output[ch] = new Float32Array(numSamples);
-      const coeff = coeffs[ch];
+    for (let ch2 = 0; ch2 < nCh; ch2++) {
+      output[ch2] = new Float32Array(numSamples);
+      const coeff = coeffs[ch2];
       for (let i = 0; i < numSamples; i++) {
-        output[ch][i] = monoSamples[i] * coeff;
+        output[ch2][i] = monoSamples[i] * coeff;
       }
     }
     return output;
@@ -7472,11 +9071,11 @@
     const numSamples = monoSamples.length;
     const coeffs = computeEncodingCoefficients2D(azim, order);
     const output = new Array(nCh);
-    for (let ch = 0; ch < nCh; ch++) {
-      output[ch] = new Float32Array(numSamples);
-      const coeff = coeffs[ch];
+    for (let ch2 = 0; ch2 < nCh; ch2++) {
+      output[ch2] = new Float32Array(numSamples);
+      const coeff = coeffs[ch2];
       for (let i = 0; i < numSamples; i++) {
-        output[ch][i] = monoSamples[i] * coeff;
+        output[ch2][i] = monoSamples[i] * coeff;
       }
     }
     return output;
@@ -7515,9 +9114,9 @@
     );
     for (const source of sources) {
       const encoded = encodeBuffer(source.samples, source.azim, source.elev, order);
-      for (let ch = 0; ch < nCh; ch++) {
+      for (let ch2 = 0; ch2 < nCh; ch2++) {
         for (let i = 0; i < source.samples.length; i++) {
-          output[ch][i] += encoded[ch][i];
+          output[ch2][i] += encoded[ch2][i];
         }
       }
     }
@@ -8954,17 +10553,17 @@
         var i = typeof commonjsRequire == "function" && commonjsRequire;
         for (var o = 0; o < r.length; o++) s(r[o]);
         return s;
-      }({ 1: [function(require2, module3, exports$13) {
-        module3.exports = { "default": require2("core-js/library/fn/object/define-property"), __esModule: true };
-      }, { "core-js/library/fn/object/define-property": 4 }], 2: [function(require2, module3, exports$13) {
+      }({ 1: [function(require, module3, exports$13) {
+        module3.exports = { "default": require("core-js/library/fn/object/define-property"), __esModule: true };
+      }, { "core-js/library/fn/object/define-property": 4 }], 2: [function(require, module3, exports$13) {
         exports$13["default"] = function(instance, Constructor) {
           if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
           }
         };
         exports$13.__esModule = true;
-      }, {}], 3: [function(require2, module3, exports$13) {
-        var _Object$defineProperty = require2("babel-runtime/core-js/object/define-property")["default"];
+      }, {}], 3: [function(require, module3, exports$13) {
+        var _Object$defineProperty = require("babel-runtime/core-js/object/define-property")["default"];
         exports$13["default"] = /* @__PURE__ */ function() {
           function defineProperties(target, props) {
             for (var i = 0; i < props.length; i++) {
@@ -8982,12 +10581,12 @@
           };
         }();
         exports$13.__esModule = true;
-      }, { "babel-runtime/core-js/object/define-property": 1 }], 4: [function(require2, module3, exports$13) {
-        var $ = require2("../../modules/$");
+      }, { "babel-runtime/core-js/object/define-property": 1 }], 4: [function(require, module3, exports$13) {
+        var $ = require("../../modules/$");
         module3.exports = function defineProperty(it, key, desc) {
           return $.setDesc(it, key, desc);
         };
-      }, { "../../modules/$": 5 }], 5: [function(require2, module3, exports$13) {
+      }, { "../../modules/$": 5 }], 5: [function(require, module3, exports$13) {
         var $Object = Object;
         module3.exports = {
           create: $Object.create,
@@ -9001,9 +10600,9 @@
           getSymbols: $Object.getOwnPropertySymbols,
           each: [].forEach
         };
-      }, {}], 6: [function(require2, module3, exports$13) {
-        var _createClass = require2("babel-runtime/helpers/create-class")["default"];
-        var _classCallCheck = require2("babel-runtime/helpers/class-call-check")["default"];
+      }, {}], 6: [function(require, module3, exports$13) {
+        var _createClass = require("babel-runtime/helpers/create-class")["default"];
+        var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -9141,9 +10740,9 @@
         }();
         exports$13["default"] = FractionalDelay;
         module3.exports = exports$13["default"];
-      }, { "babel-runtime/helpers/class-call-check": 2, "babel-runtime/helpers/create-class": 3 }], 7: [function(require2, module3, exports$13) {
-        module3.exports = require2("./dist/fractional-delay");
-      }, { "./dist/fractional-delay": 6 }], 8: [function(require2, module3, exports$13) {
+      }, { "babel-runtime/helpers/class-call-check": 2, "babel-runtime/helpers/create-class": 3 }], 7: [function(require, module3, exports$13) {
+        module3.exports = require("./dist/fractional-delay");
+      }, { "./dist/fractional-delay": 6 }], 8: [function(require, module3, exports$13) {
         (function webpackUniversalModuleDefinition(root, factory) {
           if (typeof exports$13 === "object" && typeof module3 === "object")
             module3.exports = factory();
@@ -9708,7 +11307,7 @@
                 exports$14.squaredLength = squaredLength;
                 exports$14.negate = negate;
                 exports$14.inverse = inverse;
-                exports$14.normalize = normalize;
+                exports$14.normalize = normalize2;
                 exports$14.dot = dot;
                 exports$14.cross = cross;
                 exports$14.lerp = lerp;
@@ -9876,7 +11475,7 @@
                   out[2] = 1 / a[2];
                   return out;
                 }
-                function normalize(out, a) {
+                function normalize2(out, a) {
                   var x = a[0];
                   var y = a[1];
                   var z = a[2];
@@ -10013,8 +11612,8 @@
                 function angle(a, b) {
                   var tempA = fromValues(a[0], a[1], a[2]);
                   var tempB = fromValues(b[0], b[1], b[2]);
-                  normalize(tempA, tempA);
-                  normalize(tempB, tempB);
+                  normalize2(tempA, tempA);
+                  normalize2(tempB, tempB);
                   var cosine = dot(tempA, tempB);
                   if (cosine > 1) {
                     return 0;
@@ -10099,7 +11698,7 @@
                 exports$14.squaredLength = squaredLength;
                 exports$14.negate = negate;
                 exports$14.inverse = inverse;
-                exports$14.normalize = normalize;
+                exports$14.normalize = normalize2;
                 exports$14.dot = dot;
                 exports$14.lerp = lerp;
                 exports$14.random = random;
@@ -10281,7 +11880,7 @@
                   out[3] = 1 / a[3];
                   return out;
                 }
-                function normalize(out, a) {
+                function normalize2(out, a) {
                   var x = a[0];
                   var y = a[1];
                   var z = a[2];
@@ -10316,7 +11915,7 @@
                   out[1] = glMatrix.RANDOM();
                   out[2] = glMatrix.RANDOM();
                   out[3] = glMatrix.RANDOM();
-                  normalize(out, out);
+                  normalize2(out, out);
                   scale(out, out, vectorScale);
                   return out;
                 }
@@ -12303,7 +13902,7 @@
                 exports$14.len = length;
                 var squaredLength = exports$14.squaredLength = vec4.squaredLength;
                 exports$14.sqrLen = squaredLength;
-                var normalize = exports$14.normalize = vec4.normalize;
+                var normalize2 = exports$14.normalize = vec4.normalize;
                 exports$14.exactEquals = vec4.exactEquals;
                 exports$14.equals = vec4.equals;
                 exports$14.rotationTo = function() {
@@ -12330,7 +13929,7 @@
                       out[1] = tmpvec3[1];
                       out[2] = tmpvec3[2];
                       out[3] = 1 + dot;
-                      return normalize(out, out);
+                      return normalize2(out, out);
                     }
                   };
                 }();
@@ -12356,7 +13955,7 @@
                     matr[2] = -view[0];
                     matr[5] = -view[1];
                     matr[8] = -view[2];
-                    return normalize(out, fromMat3(out, matr));
+                    return normalize2(out, fromMat3(out, matr));
                   };
                 }();
               },
@@ -12389,7 +13988,7 @@
                 exports$14.squaredLength = squaredLength;
                 exports$14.negate = negate;
                 exports$14.inverse = inverse;
-                exports$14.normalize = normalize;
+                exports$14.normalize = normalize2;
                 exports$14.dot = dot;
                 exports$14.cross = cross;
                 exports$14.lerp = lerp;
@@ -12526,7 +14125,7 @@
                   out[1] = 1 / a[1];
                   return out;
                 }
-                function normalize(out, a) {
+                function normalize2(out, a) {
                   var x = a[0], y = a[1];
                   var len = x * x + y * y;
                   if (len > 0) {
@@ -12631,7 +14230,7 @@
             ])
           );
         });
-      }, {}], 9: [function(require2, module3, exports$13) {
+      }, {}], 9: [function(require, module3, exports$13) {
         /**
          * AUTHOR OF INITIAL JS LIBRARY
          * k-d Tree JavaScript - V 1.0
@@ -12643,12 +14242,12 @@
          * @author Ubilabs http://ubilabs.net, 2012
          * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
          */
-        function Node(obj, dimension, parent) {
+        function Node(obj, dimension2, parent) {
           this.obj = obj;
           this.left = null;
           this.right = null;
           this.parent = parent;
-          this.dimension = dimension;
+          this.dimension = dimension2;
         }
         function KdTree(points, metric, dimensions) {
           var self2 = this;
@@ -12675,21 +14274,21 @@
               if (node === null) {
                 return parent;
               }
-              var dimension2 = dimensions[node.dimension];
-              if (point[dimension2] < node.obj[dimension2]) {
+              var dimension3 = dimensions[node.dimension];
+              if (point[dimension3] < node.obj[dimension3]) {
                 return innerSearch(node.left, node);
               } else {
                 return innerSearch(node.right, node);
               }
             }
-            var insertPosition = innerSearch(this.root, null), newNode, dimension;
+            var insertPosition = innerSearch(this.root, null), newNode, dimension2;
             if (insertPosition === null) {
               this.root = new Node(point, 0, null);
               return;
             }
             newNode = new Node(point, (insertPosition.dimension + 1) % dimensions.length, insertPosition);
-            dimension = dimensions[insertPosition.dimension];
-            if (point[dimension] < insertPosition.obj[dimension]) {
+            dimension2 = dimensions[insertPosition.dimension];
+            if (point[dimension2] < insertPosition.obj[dimension2]) {
               insertPosition.left = newNode;
             } else {
               insertPosition.right = newNode;
@@ -12704,8 +14303,8 @@
               if (node2.obj === point) {
                 return node2;
               }
-              var dimension = dimensions[node2.dimension];
-              if (point[dimension] < node2.obj[dimension]) {
+              var dimension2 = dimensions[node2.dimension];
+              if (point[dimension2] < node2.obj[dimension2]) {
                 return nodeSearch(node2.left);
               } else {
                 return nodeSearch(node2.right);
@@ -12714,49 +14313,49 @@
             function removeNode(node2) {
               var nextNode, nextObj, pDimension;
               function findMax(node3, dim) {
-                var dimension, own, left, right, max;
+                var dimension2, own, left, right, max;
                 if (node3 === null) {
                   return null;
                 }
-                dimension = dimensions[dim];
+                dimension2 = dimensions[dim];
                 if (node3.dimension === dim) {
                   if (node3.right !== null) {
                     return findMax(node3.right, dim);
                   }
                   return node3;
                 }
-                own = node3.obj[dimension];
+                own = node3.obj[dimension2];
                 left = findMax(node3.left, dim);
                 right = findMax(node3.right, dim);
                 max = node3;
-                if (left !== null && left.obj[dimension] > own) {
+                if (left !== null && left.obj[dimension2] > own) {
                   max = left;
                 }
-                if (right !== null && right.obj[dimension] > max.obj[dimension]) {
+                if (right !== null && right.obj[dimension2] > max.obj[dimension2]) {
                   max = right;
                 }
                 return max;
               }
               function findMin(node3, dim) {
-                var dimension, own, left, right, min;
+                var dimension2, own, left, right, min;
                 if (node3 === null) {
                   return null;
                 }
-                dimension = dimensions[dim];
+                dimension2 = dimensions[dim];
                 if (node3.dimension === dim) {
                   if (node3.left !== null) {
                     return findMin(node3.left, dim);
                   }
                   return node3;
                 }
-                own = node3.obj[dimension];
+                own = node3.obj[dimension2];
                 left = findMin(node3.left, dim);
                 right = findMin(node3.right, dim);
                 min = node3;
-                if (left !== null && left.obj[dimension] < own) {
+                if (left !== null && left.obj[dimension2] < own) {
                   min = left;
                 }
-                if (right !== null && right.obj[dimension] < min.obj[dimension]) {
+                if (right !== null && right.obj[dimension2] < min.obj[dimension2]) {
                   min = right;
                 }
                 return min;
@@ -12800,7 +14399,7 @@
               if (!self2.root) {
                 return [];
               }
-              var bestChild, dimension = dimensions[node.dimension], ownDistance = metric(point, node.obj), linearPoint = {}, linearDistance, otherChild, i2;
+              var bestChild, dimension2 = dimensions[node.dimension], ownDistance = metric(point, node.obj), linearPoint = {}, linearDistance, otherChild, i2;
               function saveNode(node2, distance) {
                 bestNodes.push([node2, distance]);
                 if (bestNodes.size() > maxNodes) {
@@ -12826,7 +14425,7 @@
               } else if (node.left === null) {
                 bestChild = node.right;
               } else {
-                if (point[dimension] < node.obj[dimension]) {
+                if (point[dimension2] < node.obj[dimension2]) {
                   bestChild = node.left;
                 } else {
                   bestChild = node.right;
@@ -12962,7 +14561,7 @@
             return new KdTree(points, metric, dimensions);
           }
         };
-      }, {}], 10: [function(require2, module3, exports$13) {
+      }, {}], 10: [function(require, module3, exports$13) {
         module3.exports = {
           "name": "serve-sofa-hrir",
           "exports": "serveSofaHrir",
@@ -13022,12 +14621,12 @@
             "watch": "^0.17.1"
           }
         };
-      }, {}], 11: [function(require2, module3, exports$13) {
+      }, {}], 11: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
         exports$13.resampleFloat32Array = resampleFloat32Array;
-        var _fractionalDelay = require2("fractional-delay");
+        var _fractionalDelay = require("fractional-delay");
         var _fractionalDelay2 = _interopRequireDefault(_fractionalDelay);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
@@ -13075,14 +14674,14 @@
         exports$13.default = {
           resampleFloat32Array
         };
-      }, { "fractional-delay": 7 }], 12: [function(require2, module3, exports$13) {
+      }, { "fractional-delay": 7 }], 12: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
         exports$13.tree = void 0;
         exports$13.distanceSquared = distanceSquared;
         exports$13.distance = distance;
-        var _kd = require2("kd.tree");
+        var _kd = require("kd.tree");
         var _kd2 = _interopRequireDefault(_kd);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
@@ -13108,7 +14707,7 @@
           distanceSquared,
           tree: _kd2.default
         };
-      }, { "kd.tree": 9 }], 13: [function(require2, module3, exports$13) {
+      }, { "kd.tree": 9 }], 13: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -13128,7 +14727,7 @@
         exports$13.systemType = systemType;
         exports$13.systemToGl = systemToGl;
         exports$13.glToSystem = glToSystem;
-        var _degree = require2("./degree");
+        var _degree = require("./degree");
         var _degree2 = _interopRequireDefault(_degree);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
@@ -13348,7 +14947,7 @@
           systemToGl,
           systemType
         };
-      }, { "./degree": 14 }], 14: [function(require2, module3, exports$13) {
+      }, { "./degree": 14 }], 14: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -13389,14 +14988,14 @@
           toRadian,
           toRadianFactor
         };
-      }, {}], 15: [function(require2, module3, exports$13) {
+      }, {}], 15: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
         exports$13.ServerDataBase = exports$13.HrtfSet = void 0;
-        var _HrtfSet = require2("./sofa/HrtfSet");
+        var _HrtfSet = require("./sofa/HrtfSet");
         var _HrtfSet2 = _interopRequireDefault(_HrtfSet);
-        var _ServerDataBase = require2("./sofa/ServerDataBase");
+        var _ServerDataBase = require("./sofa/ServerDataBase");
         var _ServerDataBase2 = _interopRequireDefault(_ServerDataBase);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
@@ -13407,12 +15006,12 @@
           HrtfSet: _HrtfSet2.default,
           ServerDataBase: _ServerDataBase2.default
         };
-      }, { "./sofa/HrtfSet": 17, "./sofa/ServerDataBase": 18 }], 16: [function(require2, module3, exports$13) {
+      }, { "./sofa/HrtfSet": 17, "./sofa/ServerDataBase": 18 }], 16: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
         exports$13.version = exports$13.name = exports$13.license = exports$13.description = void 0;
-        var _package = require2("../package.json");
+        var _package = require("../package.json");
         var _package2 = _interopRequireDefault(_package);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
@@ -13438,7 +15037,7 @@
           name,
           version
         };
-      }, { "../package.json": 10 }], 17: [function(require2, module3, exports$13) {
+      }, { "../package.json": 10 }], 17: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -13467,17 +15066,17 @@
          * @copyright 2015-2016 IRCAM, Paris, France
          * @license BSD-3-Clause
          */
-        var _glMatrix = require2("gl-matrix");
+        var _glMatrix = require("gl-matrix");
         var glMatrix = _interopRequireWildcard(_glMatrix);
-        var _info = require2("../info");
+        var _info = require("../info");
         var _info2 = _interopRequireDefault(_info);
-        var _parseDataSet = require2("./parseDataSet");
-        var _parseSofa = require2("./parseSofa");
-        var _coordinates = require2("../geometry/coordinates");
+        var _parseDataSet = require("./parseDataSet");
+        var _parseSofa = require("./parseSofa");
+        var _coordinates = require("../geometry/coordinates");
         var _coordinates2 = _interopRequireDefault(_coordinates);
-        var _KdTree = require2("../geometry/KdTree");
+        var _KdTree = require("../geometry/KdTree");
         var _KdTree2 = _interopRequireDefault(_KdTree);
-        var _utilities = require2("../audio/utilities");
+        var _utilities = require("../audio/utilities");
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
@@ -14154,7 +15753,7 @@
           return HrtfSet2;
         }();
         exports$13.default = HrtfSet;
-      }, { "../audio/utilities": 11, "../geometry/KdTree": 12, "../geometry/coordinates": 13, "../info": 16, "./parseDataSet": 19, "./parseSofa": 20, "gl-matrix": 8 }], 18: [function(require2, module3, exports$13) {
+      }, { "../audio/utilities": 11, "../geometry/KdTree": 12, "../geometry/coordinates": 13, "../info": 16, "./parseDataSet": 19, "./parseSofa": 20, "gl-matrix": 8 }], 18: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -14183,9 +15782,9 @@
          * @copyright 2015-2016 IRCAM, Paris, France
          * @license BSD-3-Clause
          */
-        var _parseXml = require2("./parseXml");
+        var _parseXml = require("./parseXml");
         var _parseXml2 = _interopRequireDefault(_parseXml);
-        var _parseDataSet = require2("./parseDataSet");
+        var _parseDataSet = require("./parseDataSet");
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
@@ -14376,7 +15975,7 @@
           return ServerDataBase2;
         }();
         exports$13.default = ServerDataBase;
-      }, { "./parseDataSet": 19, "./parseXml": 21 }], 19: [function(require2, module3, exports$13) {
+      }, { "./parseDataSet": 19, "./parseXml": 21 }], 19: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -14421,8 +16020,8 @@
                 current[0] = parts[2];
                 current[1] = {};
                 current[1].type = parts[1];
-                _parseDimension(parts[3]).forEach(function(dimension) {
-                  current[1][dimension[0]] = dimension[1];
+                _parseDimension(parts[3]).forEach(function(dimension2) {
+                  current[1][dimension2[0]] = dimension2[1];
                 });
                 parse.push(current);
               }
@@ -14441,7 +16040,7 @@
           return parse;
         }
         exports$13.default = parseDataSet;
-      }, {}], 20: [function(require2, module3, exports$13) {
+      }, {}], 20: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
@@ -14614,7 +16213,7 @@
           parseSofa,
           conformSofaCoordinateSystem
         };
-      }, {}], 21: [function(require2, module3, exports$13) {
+      }, {}], 21: [function(require, module3, exports$13) {
         Object.defineProperty(exports$13, "__esModule", {
           value: true
         });
