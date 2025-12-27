@@ -5540,7 +5540,7 @@ function robustSubtract(e, f) {
   g.length = count;
   return g;
 }
-(function(module2) {
+(function(module) {
   var twoProduct2 = twoProduct_1;
   var robustSum$1 = robustSum;
   var robustScale$1 = robustScale;
@@ -5673,9 +5673,9 @@ function robustSubtract(e, f) {
     while (CACHED.length <= NUM_EXPAND) {
       CACHED.push(orientation2(CACHED.length));
     }
-    module2.exports = proc.apply(void 0, [slowOrient].concat(CACHED));
+    module.exports = proc.apply(void 0, [slowOrient].concat(CACHED));
     for (var i = 0; i <= NUM_EXPAND; ++i) {
-      module2.exports[i] = CACHED[i];
+      module.exports[i] = CACHED[i];
     }
   }
   generateOrientationProc();
@@ -9009,12 +9009,6 @@ function getTdesign(degree) {
   var dirs = speakerPos[degree - 1];
   return dirs;
 }
-module.exports.getAmbisonicDecMtx = getAmbisonicDecMtx;
-module.exports.getTdesign = getTdesign;
-module.exports.deg2rad = deg2rad;
-module.exports.rad2deg = rad2deg;
-module.exports.createNearestLookup = createNearestLookup;
-module.exports.findNearest = findNearest;
 const _utils = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   createNearestLookup,
@@ -10522,10 +10516,10 @@ function commonjsRequire(path) {
   throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
 }
 var serveSofaHrir = { exports: {} };
-(function(module2, exports$12) {
+(function(module, exports$12) {
   (function(f) {
     {
-      module2.exports = f();
+      module.exports = f();
     }
   })(function() {
     return function e(t, n, r) {
@@ -10549,16 +10543,16 @@ var serveSofaHrir = { exports: {} };
       var i = typeof commonjsRequire == "function" && commonjsRequire;
       for (var o = 0; o < r.length; o++) s(r[o]);
       return s;
-    }({ 1: [function(require2, module3, exports$13) {
-      module3.exports = { "default": require2("core-js/library/fn/object/define-property"), __esModule: true };
-    }, { "core-js/library/fn/object/define-property": 4 }], 2: [function(require2, module3, exports$13) {
+    }({ 1: [function(require2, module2, exports$13) {
+      module2.exports = { "default": require2("core-js/library/fn/object/define-property"), __esModule: true };
+    }, { "core-js/library/fn/object/define-property": 4 }], 2: [function(require2, module2, exports$13) {
       exports$13["default"] = function(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
           throw new TypeError("Cannot call a class as a function");
         }
       };
       exports$13.__esModule = true;
-    }, {}], 3: [function(require2, module3, exports$13) {
+    }, {}], 3: [function(require2, module2, exports$13) {
       var _Object$defineProperty = require2("babel-runtime/core-js/object/define-property")["default"];
       exports$13["default"] = /* @__PURE__ */ function() {
         function defineProperties(target, props) {
@@ -10577,14 +10571,14 @@ var serveSofaHrir = { exports: {} };
         };
       }();
       exports$13.__esModule = true;
-    }, { "babel-runtime/core-js/object/define-property": 1 }], 4: [function(require2, module3, exports$13) {
+    }, { "babel-runtime/core-js/object/define-property": 1 }], 4: [function(require2, module2, exports$13) {
       var $ = require2("../../modules/$");
-      module3.exports = function defineProperty(it, key, desc) {
+      module2.exports = function defineProperty(it, key, desc) {
         return $.setDesc(it, key, desc);
       };
-    }, { "../../modules/$": 5 }], 5: [function(require2, module3, exports$13) {
+    }, { "../../modules/$": 5 }], 5: [function(require2, module2, exports$13) {
       var $Object = Object;
-      module3.exports = {
+      module2.exports = {
         create: $Object.create,
         getProto: $Object.getPrototypeOf,
         isEnum: {}.propertyIsEnumerable,
@@ -10596,7 +10590,7 @@ var serveSofaHrir = { exports: {} };
         getSymbols: $Object.getOwnPropertySymbols,
         each: [].forEach
       };
-    }, {}], 6: [function(require2, module3, exports$13) {
+    }, {}], 6: [function(require2, module2, exports$13) {
       var _createClass = require2("babel-runtime/helpers/create-class")["default"];
       var _classCallCheck = require2("babel-runtime/helpers/class-call-check")["default"];
       Object.defineProperty(exports$13, "__esModule", {
@@ -10735,13 +10729,13 @@ var serveSofaHrir = { exports: {} };
         return FractionalDelay2;
       }();
       exports$13["default"] = FractionalDelay;
-      module3.exports = exports$13["default"];
-    }, { "babel-runtime/helpers/class-call-check": 2, "babel-runtime/helpers/create-class": 3 }], 7: [function(require2, module3, exports$13) {
-      module3.exports = require2("./dist/fractional-delay");
-    }, { "./dist/fractional-delay": 6 }], 8: [function(require2, module3, exports$13) {
+      module2.exports = exports$13["default"];
+    }, { "babel-runtime/helpers/class-call-check": 2, "babel-runtime/helpers/create-class": 3 }], 7: [function(require2, module2, exports$13) {
+      module2.exports = require2("./dist/fractional-delay");
+    }, { "./dist/fractional-delay": 6 }], 8: [function(require2, module2, exports$13) {
       (function webpackUniversalModuleDefinition(root, factory) {
-        if (typeof exports$13 === "object" && typeof module3 === "object")
-          module3.exports = factory();
+        if (typeof exports$13 === "object" && typeof module2 === "object")
+          module2.exports = factory();
         else {
           var a = factory();
           for (var i in a) (typeof exports$13 === "object" ? exports$13 : root)[i] = a[i];
@@ -10755,7 +10749,7 @@ var serveSofaHrir = { exports: {} };
               if (installedModules[moduleId]) {
                 return installedModules[moduleId].exports;
               }
-              var module4 = installedModules[moduleId] = {
+              var module3 = installedModules[moduleId] = {
                 /******/
                 i: moduleId,
                 /******/
@@ -10764,9 +10758,9 @@ var serveSofaHrir = { exports: {} };
                 exports: {}
                 /******/
               };
-              modules[moduleId].call(module4.exports, module4, module4.exports, __webpack_require__);
-              module4.l = true;
-              return module4.exports;
+              modules[moduleId].call(module3.exports, module3, module3.exports, __webpack_require__);
+              module3.l = true;
+              return module3.exports;
             }
             __webpack_require__.m = modules;
             __webpack_require__.c = installedModules;
@@ -10783,16 +10777,16 @@ var serveSofaHrir = { exports: {} };
                 });
               }
             };
-            __webpack_require__.n = function(module4) {
-              var getter = module4 && module4.__esModule ? (
+            __webpack_require__.n = function(module3) {
+              var getter = module3 && module3.__esModule ? (
                 /******/
                 function getDefault() {
-                  return module4["default"];
+                  return module3["default"];
                 }
               ) : (
                 /******/
                 function getModuleExports() {
-                  return module4;
+                  return module3;
                 }
               );
               __webpack_require__.d(getter, "a", getter);
@@ -10806,7 +10800,7 @@ var serveSofaHrir = { exports: {} };
           }([
             /* 0 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -10829,7 +10823,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 1 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -11276,7 +11270,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 2 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -11667,7 +11661,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 3 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -11986,7 +11980,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 4 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -12035,7 +12029,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 5 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -12260,7 +12254,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 6 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -12508,7 +12502,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 7 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -13669,7 +13663,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 8 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -13957,7 +13951,7 @@ var serveSofaHrir = { exports: {} };
             },
             /* 9 */
             /***/
-            function(module4, exports$14, __webpack_require__) {
+            function(module3, exports$14, __webpack_require__) {
               Object.defineProperty(exports$14, "__esModule", {
                 value: true
               });
@@ -14226,7 +14220,7 @@ var serveSofaHrir = { exports: {} };
           ])
         );
       });
-    }, {}], 9: [function(require2, module3, exports$13) {
+    }, {}], 9: [function(require2, module2, exports$13) {
       /**
        * AUTHOR OF INITIAL JS LIBRARY
        * k-d Tree JavaScript - V 1.0
@@ -14552,13 +14546,13 @@ var serveSofaHrir = { exports: {} };
           }
         }
       };
-      module3.exports = {
+      module2.exports = {
         createKdTree: function(points, metric, dimensions) {
           return new KdTree(points, metric, dimensions);
         }
       };
-    }, {}], 10: [function(require2, module3, exports$13) {
-      module3.exports = {
+    }, {}], 10: [function(require2, module2, exports$13) {
+      module2.exports = {
         "name": "serve-sofa-hrir",
         "exports": "serveSofaHrir",
         "version": "0.4.2",
@@ -14617,7 +14611,7 @@ var serveSofaHrir = { exports: {} };
           "watch": "^0.17.1"
         }
       };
-    }, {}], 11: [function(require2, module3, exports$13) {
+    }, {}], 11: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -14670,7 +14664,7 @@ var serveSofaHrir = { exports: {} };
       exports$13.default = {
         resampleFloat32Array
       };
-    }, { "fractional-delay": 7 }], 12: [function(require2, module3, exports$13) {
+    }, { "fractional-delay": 7 }], 12: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -14703,7 +14697,7 @@ var serveSofaHrir = { exports: {} };
         distanceSquared,
         tree: _kd2.default
       };
-    }, { "kd.tree": 9 }], 13: [function(require2, module3, exports$13) {
+    }, { "kd.tree": 9 }], 13: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -14943,7 +14937,7 @@ var serveSofaHrir = { exports: {} };
         systemToGl,
         systemType
       };
-    }, { "./degree": 14 }], 14: [function(require2, module3, exports$13) {
+    }, { "./degree": 14 }], 14: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -14984,7 +14978,7 @@ var serveSofaHrir = { exports: {} };
         toRadian,
         toRadianFactor
       };
-    }, {}], 15: [function(require2, module3, exports$13) {
+    }, {}], 15: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -15002,7 +14996,7 @@ var serveSofaHrir = { exports: {} };
         HrtfSet: _HrtfSet2.default,
         ServerDataBase: _ServerDataBase2.default
       };
-    }, { "./sofa/HrtfSet": 17, "./sofa/ServerDataBase": 18 }], 16: [function(require2, module3, exports$13) {
+    }, { "./sofa/HrtfSet": 17, "./sofa/ServerDataBase": 18 }], 16: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -15033,7 +15027,7 @@ var serveSofaHrir = { exports: {} };
         name,
         version
       };
-    }, { "../package.json": 10 }], 17: [function(require2, module3, exports$13) {
+    }, { "../package.json": 10 }], 17: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -15749,7 +15743,7 @@ var serveSofaHrir = { exports: {} };
         return HrtfSet2;
       }();
       exports$13.default = HrtfSet;
-    }, { "../audio/utilities": 11, "../geometry/KdTree": 12, "../geometry/coordinates": 13, "../info": 16, "./parseDataSet": 19, "./parseSofa": 20, "gl-matrix": 8 }], 18: [function(require2, module3, exports$13) {
+    }, { "../audio/utilities": 11, "../geometry/KdTree": 12, "../geometry/coordinates": 13, "../info": 16, "./parseDataSet": 19, "./parseSofa": 20, "gl-matrix": 8 }], 18: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -15971,7 +15965,7 @@ var serveSofaHrir = { exports: {} };
         return ServerDataBase2;
       }();
       exports$13.default = ServerDataBase;
-    }, { "./parseDataSet": 19, "./parseXml": 21 }], 19: [function(require2, module3, exports$13) {
+    }, { "./parseDataSet": 19, "./parseXml": 21 }], 19: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -16036,7 +16030,7 @@ var serveSofaHrir = { exports: {} };
         return parse;
       }
       exports$13.default = parseDataSet;
-    }, {}], 20: [function(require2, module3, exports$13) {
+    }, {}], 20: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });
@@ -16209,7 +16203,7 @@ var serveSofaHrir = { exports: {} };
         parseSofa,
         conformSofaCoordinateSystem
       };
-    }, {}], 21: [function(require2, module3, exports$13) {
+    }, {}], 21: [function(require2, module2, exports$13) {
       Object.defineProperty(exports$13, "__esModule", {
         value: true
       });

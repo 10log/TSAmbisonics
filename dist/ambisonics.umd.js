@@ -9013,12 +9013,6 @@
     var dirs = speakerPos[degree - 1];
     return dirs;
   }
-  module.exports.getAmbisonicDecMtx = getAmbisonicDecMtx;
-  module.exports.getTdesign = getTdesign;
-  module.exports.deg2rad = deg2rad;
-  module.exports.rad2deg = rad2deg;
-  module.exports.createNearestLookup = createNearestLookup;
-  module.exports.findNearest = findNearest;
   const _utils = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
     createNearestLookup,
