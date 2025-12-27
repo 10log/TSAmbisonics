@@ -107,93 +107,12 @@ declare module 'spherical-harmonic-transform' {
   export function print2Darray(array2D: Matrix): void;
 }
 
-declare module 'numeric' {
-  export type Matrix = number[][];
-  export type Vector = number[];
-
-  export function identity(n: number): Matrix;
-  export function transpose(A: Matrix): Matrix;
-  export function dot(A: Matrix | Vector, B: Matrix | Vector): Matrix | Vector | number;
-  export function dotMV(A: Matrix, v: Vector): Vector;
-  export function dotVM(v: Vector, A: Matrix): Vector;
-  export function dotVV(v1: Vector, v2: Vector): number;
-  export function dotMMsmall(A: Matrix, B: Matrix): Matrix;
-  export function mul(scalar: number | Vector | Matrix, A: Matrix | Vector): Matrix | Vector;
-  export function div(A: Vector | Matrix | number[], scalar: number): Vector | Matrix | number[];
-  export function neg(A: Matrix): Matrix;
-  export function add(A: Matrix | Vector | number, B: Matrix | Vector | number, ...rest: (Matrix | Vector | number)[]): Matrix | Vector;
-  export function sub(A: Matrix | Vector, B: Matrix | Vector): Matrix | Vector;
-  export function pow(A: Vector | number[], exp: number): Vector | number[];
-  export function sum(A: Vector | number[]): number;
-  export function sin(A: Vector | number[]): Vector | number[];
-  export function cos(A: Vector | number[]): Vector | number[];
-  export function round(A: Vector | number[]): Vector | number[];
-  export function mod(A: Vector | number[], m: number): Vector | number[];
-  export function inv(A: Matrix): Matrix;
-  export function det(A: Matrix): number;
-  export function eig(A: Matrix): { lambda: { x: Vector; y: Vector }; E: { x: Matrix; y: Matrix } };
-  export function svd(A: Matrix): { U: Matrix; S: Vector; V: Matrix };
-  export function diag(v: Vector): Matrix;
-  export function rep(dims: number[], value: number): Matrix | Vector;
-  export function clone<T>(x: T): T;
-}
-
 declare module 'get-float-time-domain-data' {
   export default function getFloatTimeDomainData(analyser: AnalyserNode, array: Float32Array): void;
 }
 
 declare module 'convex-hull' {
   export default function convexHull(points: number[][]): number[][];
-}
-
-// Type declarations for the local utils module
-declare module './utils' {
-  /** Direction in degrees with optional distance [azimuth, elevation, distance?] */
-  export type DirectionDeg = [number, number] | [number, number, number];
-
-  /** Direction in radians with optional distance [azimuth, elevation, distance?] */
-  export type DirectionRad = [number, number] | [number, number, number];
-
-  /** Convert degrees to radians for direction arrays */
-  export function deg2rad(aedArrayIn: DirectionDeg[]): DirectionRad[];
-
-  /** Convert radians to degrees for direction arrays */
-  export function rad2deg(aedArrayIn: DirectionRad[]): DirectionDeg[];
-
-  /** Get a specific column from a 2D array */
-  export function getColumn<T>(anArray: T[][], columnNumber: number): T[];
-
-  /** Sample equidistant points on a circle for 2D virtual speakers */
-  export function sampleCircle(numPoints: number): [number, number, number][];
-
-  /** Calculate circular harmonics of arbitrary order */
-  export function getCircHarmonics(order: number, phis: number[]): number[][];
-
-  /** Get ambisonic decoding matrix using ALLRAD method */
-  export function getAmbisonicDecMtx(
-    hrtf_dirs_deg: DirectionDeg[],
-    order: number
-  ): number[][];
-
-  /** Create lookup table for fast nearest-neighbor finding */
-  export function createNearestLookup(
-    dirs_deg: [number, number][],
-    ang_res: [number, number]
-  ): number[];
-
-  /** Find nearest directions using precomputed lookup table */
-  export function findNearest(
-    dirs_deg: DirectionDeg[],
-    nearestLookup: number[],
-    ang_res: [number, number]
-  ): number[];
-
-  /**
-   * Get t-design speaker positions for a given degree.
-   * Returns [azimuth, elevation, distance] tuples.
-   * @param degree - T-design degree (1-21)
-   */
-  export function getTdesign(degree: number): [number, number, number][];
 }
 
 declare module 'serve-sofa-hrir' {

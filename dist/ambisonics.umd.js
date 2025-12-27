@@ -15,9 +15,6 @@
     return radians * 180 / Math.PI;
   }
   var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
-  function getDefaultExportFromCjs(x) {
-    return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
-  }
   var numeric1_2_6 = {};
   (function(exports$1) {
     var numeric = exports$1;
@@ -4877,7 +4874,6 @@
       return { U: u, S: q, V: v };
     };
   })(numeric1_2_6);
-  const numeric$2 = /* @__PURE__ */ getDefaultExportFromCjs(numeric1_2_6);
   var numeric$1 = numeric1_2_6;
   var forwardSHT = function(N, data, CART_OR_SPH, DIRECT_OR_PINV) {
     var Ndirs = data.length, Nsh = (N + 1) * (N + 1);
@@ -5126,9 +5122,223 @@
   var recurseLegendrePoly_1 = recurseLegendrePoly;
   var getSHrotMtx_1 = getSHrotMtx;
   var yawPitchRoll2Rzyx_1 = yawPitchRoll2Rzyx;
-  var numeric = require("numeric");
   var jshlib = require("spherical-harmonic-transform");
   var convexhull = require("convex-hull");
+  const numeric = {
+    // Element-wise multiplication: array * scalar or scalar * array
+    mul: function(a, b) {
+      if (Array.isArray(a) && typeof b === "number") {
+        return a.map((x) => x * b);
+      } else if (typeof a === "number" && Array.isArray(b)) {
+        return b.map((x) => a * x);
+      } else if (Array.isArray(a) && Array.isArray(b)) {
+        return a.map((x, i) => x * b[i]);
+      }
+      return a * b;
+    },
+    // Element-wise division: array / scalar
+    div: function(arr, scalar) {
+      if (Array.isArray(arr)) {
+        return arr.map((x) => x / scalar);
+      }
+      return arr / scalar;
+    },
+    // Element-wise sine
+    sin: function(arr) {
+      return arr.map((x) => Math.sin(x));
+    },
+    // Element-wise cosine
+    cos: function(arr) {
+      return arr.map((x) => Math.cos(x));
+    },
+    // Element-wise power
+    pow: function(arr, exp) {
+      return arr.map((x) => Math.pow(x, exp));
+    },
+    // Sum of array elements
+    sum: function(arr) {
+      return arr.reduce((a, b) => a + b, 0);
+    },
+    // Vector dot product
+    dotVV: function(a, b) {
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) {
+        sum += a[i] * b[i];
+      }
+      return sum;
+    },
+    // Element-wise subtraction
+    sub: function(a, b) {
+      if (Array.isArray(a) && Array.isArray(b)) {
+        return a.map((x, i) => x - b[i]);
+      }
+      return a - b;
+    },
+    // Element-wise rounding
+    round: function(arr) {
+      if (Array.isArray(arr)) {
+        return arr.map((x) => Math.round(x));
+      }
+      return Math.round(arr);
+    },
+    // Element-wise modulo
+    mod: function(arr, m) {
+      if (Array.isArray(arr)) {
+        return arr.map((x) => (x % m + m) % m);
+      }
+      return (arr % m + m) % m;
+    },
+    // Element-wise addition (supports multiple arguments)
+    add: function(...args) {
+      if (args.length === 0) return 0;
+      let result = args[0];
+      for (let i = 1; i < args.length; i++) {
+        const b = args[i];
+        if (Array.isArray(result) && Array.isArray(b)) {
+          result = result.map((x, j) => x + b[j]);
+        } else if (Array.isArray(result) && typeof b === "number") {
+          result = result.map((x) => x + b);
+        } else if (typeof result === "number" && Array.isArray(b)) {
+          result = b.map((x) => x + result);
+        } else {
+          result = result + b;
+        }
+      }
+      return result;
+    },
+    // Matrix transpose
+    transpose: function(m) {
+      const rows = m.length;
+      const cols = m[0].length;
+      const result = new Array(cols);
+      for (let j = 0; j < cols; j++) {
+        result[j] = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+          result[j][i] = m[i][j];
+        }
+      }
+      return result;
+    },
+    // Matrix-matrix multiplication (for small matrices)
+    dotMMsmall: function(A2, B2) {
+      const rowsA = A2.length;
+      const colsA = A2[0].length;
+      const colsB = B2[0].length;
+      const result = new Array(rowsA);
+      for (let i = 0; i < rowsA; i++) {
+        result[i] = new Array(colsB);
+        for (let j = 0; j < colsB; j++) {
+          let sum = 0;
+          for (let k2 = 0; k2 < colsA; k2++) {
+            sum += A2[i][k2] * B2[k2][j];
+          }
+          result[i][j] = sum;
+        }
+      }
+      return result;
+    },
+    // Matrix inversion (for 3x3 matrices, used in VBAP)
+    inv: function(m) {
+      const n = m.length;
+      const aug = new Array(n);
+      for (let i = 0; i < n; i++) {
+        aug[i] = new Array(2 * n);
+        for (let j = 0; j < n; j++) {
+          aug[i][j] = m[i][j];
+          aug[i][j + n] = i === j ? 1 : 0;
+        }
+      }
+      for (let col = 0; col < n; col++) {
+        let maxRow = col;
+        for (let row = col + 1; row < n; row++) {
+          if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) {
+            maxRow = row;
+          }
+        }
+        [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+        if (Math.abs(aug[col][col]) < 1e-10) {
+          throw new Error("Matrix is singular");
+        }
+        const pivot = aug[col][col];
+        for (let j = 0; j < 2 * n; j++) {
+          aug[col][j] /= pivot;
+        }
+        for (let row = 0; row < n; row++) {
+          if (row !== col) {
+            const factor = aug[row][col];
+            for (let j = 0; j < 2 * n; j++) {
+              aug[row][j] -= factor * aug[col][j];
+            }
+          }
+        }
+      }
+      const inv = new Array(n);
+      for (let i = 0; i < n; i++) {
+        inv[i] = new Array(n);
+        for (let j = 0; j < n; j++) {
+          inv[i][j] = aug[i][j + n];
+        }
+      }
+      return inv;
+    },
+    // Identity matrix
+    identity: function(n) {
+      const result = new Array(n);
+      for (let i = 0; i < n; i++) {
+        result[i] = new Array(n);
+        for (let j = 0; j < n; j++) {
+          result[i][j] = i === j ? 1 : 0;
+        }
+      }
+      return result;
+    },
+    // Diagonal matrix from vector
+    diag: function(v) {
+      const n = v.length;
+      const result = new Array(n);
+      for (let i = 0; i < n; i++) {
+        result[i] = new Array(n);
+        for (let j = 0; j < n; j++) {
+          result[i][j] = i === j ? v[i] : 0;
+        }
+      }
+      return result;
+    },
+    // General dot product (matrix-matrix, matrix-vector, vector-vector)
+    dot: function(A2, B2) {
+      if (!Array.isArray(A2[0]) && !Array.isArray(B2[0])) {
+        return numeric.dotVV(A2, B2);
+      }
+      if (Array.isArray(A2[0]) && !Array.isArray(B2[0])) {
+        const rows = A2.length;
+        const cols = A2[0].length;
+        const result2 = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+          let sum = 0;
+          for (let j = 0; j < cols; j++) {
+            sum += A2[i][j] * B2[j];
+          }
+          result2[i] = sum;
+        }
+        return result2;
+      }
+      const rowsA = A2.length;
+      const colsA = A2[0].length;
+      const colsB = B2[0].length;
+      const result = new Array(rowsA);
+      for (let i = 0; i < rowsA; i++) {
+        result[i] = new Array(colsB);
+        for (let j = 0; j < colsB; j++) {
+          let sum = 0;
+          for (let k2 = 0; k2 < colsA; k2++) {
+            sum += A2[i][k2] * B2[k2][j];
+          }
+          result[i][j] = sum;
+        }
+      }
+      return result;
+    }
+  };
   function deg2rad(aedArrayIn) {
     var aedArrayOut = [];
     var PI_180 = Math.PI / 180;
@@ -7219,6 +7429,7 @@
     getCircHarmonics,
     getColumn,
     getTdesign,
+    numeric,
     rad2deg,
     sampleCircle
   }, Symbol.toStringTag, { value: "Module" }));
@@ -7579,7 +7790,7 @@
       this.yaw = 0;
       this.pitch = 0;
       this.roll = 0;
-      this.rotMtx = numeric$2.identity(this.nCh);
+      this.rotMtx = numeric.identity(this.nCh);
       this.rotMtxNodes = new Array(this.order);
       this.in = this.ctx.createChannelSplitter(this.nCh);
       this.out = this.ctx.createChannelMerger(this.nCh);
@@ -8261,8 +8472,8 @@
     }
     computePowermap() {
       const nDirs = this.td_dirs_rad.length;
-      const data = numeric$2.dot(
-        numeric$2.transpose(this.SHmtx),
+      const data = numeric.dot(
+        numeric.transpose(this.SHmtx),
         this.analBuffers
       );
       const powerValues = new Array(nDirs);
@@ -8673,18 +8884,18 @@
         a_n.push(Math.cos(i * Math.PI / (2 * this.order + 2)));
         a_n.push(Math.cos(i * Math.PI / (2 * this.order + 2)));
       }
-      const diagA = numeric$2.diag(a_n);
-      this.decodingMatrix = numeric$2.transpose(
+      const diagA = numeric.diag(a_n);
+      this.decodingMatrix = numeric.transpose(
         getCircHarmonics(
           this.order,
           getColumn(this.vls_dirs_deg, 0)
         )
       );
-      this.decodingMatrix = numeric$2.dot(
+      this.decodingMatrix = numeric.dot(
         this.decodingMatrix,
         diagA
       );
-      this.decodingMatrix = numeric$2.mul(
+      this.decodingMatrix = numeric.mul(
         2 * Math.PI / this.vls_dirs_deg.length,
         this.decodingMatrix
       );

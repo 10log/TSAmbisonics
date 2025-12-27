@@ -49,3 +49,24 @@ export function findNearest(
  * @param degree - T-design degree (1-21)
  */
 export function getTdesign(degree: number): [number, number, number][];
+
+/** Numeric utilities object (inline replacements for numeric library) */
+export const numeric: {
+  mul(a: number | number[] | number[][], b: number | number[] | number[][]): number | number[] | number[][];
+  div(arr: number | number[], scalar: number): number | number[];
+  sin(arr: number[]): number[];
+  cos(arr: number[]): number[];
+  pow(arr: number[], exp: number): number[];
+  sum(arr: number[]): number;
+  dotVV(a: number[], b: number[]): number;
+  sub(a: number | number[], b: number | number[]): number | number[];
+  round(arr: number | number[]): number | number[];
+  mod(arr: number | number[], m: number): number | number[];
+  add(...args: (number | number[])[]): number | number[];
+  transpose(m: number[][]): number[][];
+  dotMMsmall(A: number[][], B: number[][]): number[][];
+  inv(m: number[][]): number[][];
+  identity(n: number): number[][];
+  diag(v: number[]): number[][];
+  dot(A: number[] | number[][], B: number[] | number[][]): number | number[] | number[][];
+};
