@@ -20,9 +20,9 @@
 // for Safari support where audioContext.Analyser.getFloatTimeDomainData is not defined for now
 import 'get-float-time-domain-data';
 
-import numeric from 'numeric';
 import * as jshlib from 'spherical-harmonic-transform';
 import * as utils from './utils.js';
+import { numeric } from './utils.js';
 import { type AmbisonicProcessor, getAmbisonicChannelCount } from './types';
 
 /** Power value at direction: [azimuth_rad, elevation_rad, power] */

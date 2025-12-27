@@ -21,8 +21,8 @@
 /* HRIR LOADER 2D*/
 ///////////////////
 
-import numeric from 'numeric';
 import * as utils from './utils.js';
+import { numeric } from './utils.js';
 import { type LoaderCallback, getAmbisonicChannelCount2D } from './types';
 
 /** SOFA JSON structure for HRIR data */

@@ -25,9 +25,255 @@
 /* UTILS */
 ///////////
 
-var numeric = require('numeric');
 var jshlib = require('spherical-harmonic-transform');
 var convexhull = require('convex-hull');
+
+// Inline replacements for numeric library functions (ESM compatibility)
+const numeric = {
+  // Element-wise multiplication: array * scalar or scalar * array
+  mul: function(a, b) {
+    if (Array.isArray(a) && typeof b === 'number') {
+      return a.map(x => x * b);
+    } else if (typeof a === 'number' && Array.isArray(b)) {
+      return b.map(x => a * x);
+    } else if (Array.isArray(a) && Array.isArray(b)) {
+      return a.map((x, i) => x * b[i]);
+    }
+    return a * b;
+  },
+
+  // Element-wise division: array / scalar
+  div: function(arr, scalar) {
+    if (Array.isArray(arr)) {
+      return arr.map(x => x / scalar);
+    }
+    return arr / scalar;
+  },
+
+  // Element-wise sine
+  sin: function(arr) {
+    return arr.map(x => Math.sin(x));
+  },
+
+  // Element-wise cosine
+  cos: function(arr) {
+    return arr.map(x => Math.cos(x));
+  },
+
+  // Element-wise power
+  pow: function(arr, exp) {
+    return arr.map(x => Math.pow(x, exp));
+  },
+
+  // Sum of array elements
+  sum: function(arr) {
+    return arr.reduce((a, b) => a + b, 0);
+  },
+
+  // Vector dot product
+  dotVV: function(a, b) {
+    let sum = 0;
+    for (let i = 0; i < a.length; i++) {
+      sum += a[i] * b[i];
+    }
+    return sum;
+  },
+
+  // Element-wise subtraction
+  sub: function(a, b) {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.map((x, i) => x - b[i]);
+    }
+    return a - b;
+  },
+
+  // Element-wise rounding
+  round: function(arr) {
+    if (Array.isArray(arr)) {
+      return arr.map(x => Math.round(x));
+    }
+    return Math.round(arr);
+  },
+
+  // Element-wise modulo
+  mod: function(arr, m) {
+    if (Array.isArray(arr)) {
+      return arr.map(x => ((x % m) + m) % m);
+    }
+    return ((arr % m) + m) % m;
+  },
+
+  // Element-wise addition (supports multiple arguments)
+  add: function(...args) {
+    if (args.length === 0) return 0;
+    let result = args[0];
+    for (let i = 1; i < args.length; i++) {
+      const b = args[i];
+      if (Array.isArray(result) && Array.isArray(b)) {
+        result = result.map((x, j) => x + b[j]);
+      } else if (Array.isArray(result) && typeof b === 'number') {
+        result = result.map(x => x + b);
+      } else if (typeof result === 'number' && Array.isArray(b)) {
+        result = b.map(x => x + result);
+      } else {
+        result = result + b;
+      }
+    }
+    return result;
+  },
+
+  // Matrix transpose
+  transpose: function(m) {
+    const rows = m.length;
+    const cols = m[0].length;
+    const result = new Array(cols);
+    for (let j = 0; j < cols; j++) {
+      result[j] = new Array(rows);
+      for (let i = 0; i < rows; i++) {
+        result[j][i] = m[i][j];
+      }
+    }
+    return result;
+  },
+
+  // Matrix-matrix multiplication (for small matrices)
+  dotMMsmall: function(A, B) {
+    const rowsA = A.length;
+    const colsA = A[0].length;
+    const colsB = B[0].length;
+    const result = new Array(rowsA);
+    for (let i = 0; i < rowsA; i++) {
+      result[i] = new Array(colsB);
+      for (let j = 0; j < colsB; j++) {
+        let sum = 0;
+        for (let k = 0; k < colsA; k++) {
+          sum += A[i][k] * B[k][j];
+        }
+        result[i][j] = sum;
+      }
+    }
+    return result;
+  },
+
+  // Matrix inversion (for 3x3 matrices, used in VBAP)
+  inv: function(m) {
+    const n = m.length;
+    // Create augmented matrix [m | I]
+    const aug = new Array(n);
+    for (let i = 0; i < n; i++) {
+      aug[i] = new Array(2 * n);
+      for (let j = 0; j < n; j++) {
+        aug[i][j] = m[i][j];
+        aug[i][j + n] = (i === j) ? 1 : 0;
+      }
+    }
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < n; col++) {
+      // Find pivot
+      let maxRow = col;
+      for (let row = col + 1; row < n; row++) {
+        if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) {
+          maxRow = row;
+        }
+      }
+      // Swap rows
+      [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+      // Check for singular matrix
+      if (Math.abs(aug[col][col]) < 1e-10) {
+        throw new Error('Matrix is singular');
+      }
+      // Scale pivot row
+      const pivot = aug[col][col];
+      for (let j = 0; j < 2 * n; j++) {
+        aug[col][j] /= pivot;
+      }
+      // Eliminate column
+      for (let row = 0; row < n; row++) {
+        if (row !== col) {
+          const factor = aug[row][col];
+          for (let j = 0; j < 2 * n; j++) {
+            aug[row][j] -= factor * aug[col][j];
+          }
+        }
+      }
+    }
+    // Extract inverse from augmented matrix
+    const inv = new Array(n);
+    for (let i = 0; i < n; i++) {
+      inv[i] = new Array(n);
+      for (let j = 0; j < n; j++) {
+        inv[i][j] = aug[i][j + n];
+      }
+    }
+    return inv;
+  },
+
+  // Identity matrix
+  identity: function(n) {
+    const result = new Array(n);
+    for (let i = 0; i < n; i++) {
+      result[i] = new Array(n);
+      for (let j = 0; j < n; j++) {
+        result[i][j] = (i === j) ? 1 : 0;
+      }
+    }
+    return result;
+  },
+
+  // Diagonal matrix from vector
+  diag: function(v) {
+    const n = v.length;
+    const result = new Array(n);
+    for (let i = 0; i < n; i++) {
+      result[i] = new Array(n);
+      for (let j = 0; j < n; j++) {
+        result[i][j] = (i === j) ? v[i] : 0;
+      }
+    }
+    return result;
+  },
+
+  // General dot product (matrix-matrix, matrix-vector, vector-vector)
+  dot: function(A, B) {
+    // Check if both are 1D arrays (vector-vector)
+    if (!Array.isArray(A[0]) && !Array.isArray(B[0])) {
+      return numeric.dotVV(A, B);
+    }
+    // Matrix-vector: A is matrix, B is vector
+    if (Array.isArray(A[0]) && !Array.isArray(B[0])) {
+      const rows = A.length;
+      const cols = A[0].length;
+      const result = new Array(rows);
+      for (let i = 0; i < rows; i++) {
+        let sum = 0;
+        for (let j = 0; j < cols; j++) {
+          sum += A[i][j] * B[j];
+        }
+        result[i] = sum;
+      }
+      return result;
+    }
+    // Matrix-matrix multiplication
+    const rowsA = A.length;
+    const colsA = A[0].length;
+    const colsB = B[0].length;
+    const result = new Array(rowsA);
+    for (let i = 0; i < rowsA; i++) {
+      result[i] = new Array(colsB);
+      for (let j = 0; j < colsB; j++) {
+        let sum = 0;
+        for (let k = 0; k < colsA; k++) {
+          sum += A[i][k] * B[k][j];
+        }
+        result[i][j] = sum;
+      }
+    }
+    return result;
+  }
+};
+
+// Export numeric utilities for use in other modules
+export { numeric };
 
 export function deg2rad(aedArrayIn) {
     // format: [ [azim_1, elev_1, dist_1], ..., [azim_N, elev_N, dist_N] ]

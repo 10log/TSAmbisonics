@@ -16,7 +16,7 @@
 /////////////////
 
 import * as jshlib from 'spherical-harmonic-transform';
-import numeric from 'numeric';
+import { numeric } from './utils.js';
 import {
   type AmbisonicProcessor,
   type RotatableProcessor,

@@ -43,7 +43,6 @@
   "dependencies": {
     "convex-hull": "^1.0.3",
     "get-float-time-domain-data": "^0.1.0",
-    "numeric": "^1.2.6",
     "serve-sofa-hrir": "Ircam-RnD/serveSofaHrir",
     "spherical-harmonic-transform": "^0.1.0"
   },
